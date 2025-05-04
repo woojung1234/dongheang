@@ -1,23 +1,26 @@
 import axios from 'axios';
 
-// API 기본 URL 설정
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
-// 인터셉터를 통한 JWT 토큰 설정
+// axios 인스턴스 생성
 const api = axios.create({
-  baseURL: API_URL,
+  // 서버의 실제 URL로 변경 (5000이 포트임을 확인했으니 유지)
+  baseURL: 'http://localhost:5000',
+  timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
-// 요청 인터셉터 - JWT 토큰을 헤더에 추가
+// 요청 인터셉터
 api.interceptors.request.use(
   (config) => {
+    // 로컬 스토리지에서 토큰 가져오기
     const token = localStorage.getItem('token');
+    
+    // 토큰이 있으면 헤더에 추가
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
@@ -25,19 +28,23 @@ api.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터 - 오류 처리
+// 응답 인터셉터
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // 성공적인 응답 처리
+    return response;
+  },
   (error) => {
-    // 401 오류(인증 실패) 처리
+    // 오류 응답 처리
+    console.error('API 오류:', error);
+    
+    // 토큰 만료 (401) 처리
     if (error.response && error.response.status === 401) {
+      // 로컬 스토리지 클리어
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // 로그인 페이지로 리디렉션
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
     }
+    
     return Promise.reject(error);
   }
 );

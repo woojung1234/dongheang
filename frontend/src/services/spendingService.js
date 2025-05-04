@@ -58,6 +58,8 @@ export const deleteSpending = async (id) => {
 // 월별 소비 통계
 export const getMonthlyStats = async (year, month) => {
   try {
+    // '/api/api/spendi' 로 시작하는 잘못된 경로로 요청이 가고 있음
+    // 올바른 경로로 수정
     const response = await api.get('/spending/stats/monthly', {
       params: { year, month }
     });
@@ -106,3 +108,17 @@ export const getBudgetRecommendation = async (income, savingGoal) => {
     throw error;
   }
 };
+
+const spendingService = {
+  addSpending,
+  getSpendingList,
+  getSpendingById,
+  updateSpending,
+  deleteSpending,
+  getMonthlyStats,
+  getComparisonStats,
+  getPredictionAnalysis,
+  getBudgetRecommendation
+};
+
+export default spendingService;

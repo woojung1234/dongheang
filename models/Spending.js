@@ -1,38 +1,25 @@
+// models/Spending.js
 const mongoose = require('mongoose');
 
 const SpendingSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  sex: {
+    type: String,
+    required: true,
+    enum: ['F', 'M'] // 성별은 'F' 또는 'M'으로 제한
   },
-  amount: {
+  age: {
     type: Number,
     required: true
   },
-  category: {
-    type: String,
-    required: true,
-    enum: ['식비', '교통', '주거', '의료', '교육', '문화', '의류', '통신', '기타']
-  },
-  description: {
-    type: String,
-    required: false
-  },
-  date: {
-    type: Date,
-    default: Date.now,
+  total_spent: {
+    type: Number,
     required: true
   },
-  paymentMethod: {
+  card_tpbuz_nm_1: {
     type: String,
-    enum: ['현금', '카드', '계좌이체', '모바일결제', '기타'],
-    default: '카드'
+    required: true
   },
-  isRecurring: {
-    type: Boolean,
-    default: false
-  },
+  // 검색 및 필터링을 위한 추가 필드
   createdAt: {
     type: Date,
     default: Date.now
