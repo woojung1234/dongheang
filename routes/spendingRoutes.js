@@ -9,7 +9,9 @@ const {
   getGenderStats,
   getAgeStats,
   getCategoryStats,
-  getDashboardStats
+  getDashboardStats,
+  getMonthlyStats,
+  getPeerComparison
 } = require('../controllers/spendingController');
 
 const router = express.Router();
@@ -28,6 +30,12 @@ router.get('/stats/age', getAgeStats);
 
 // 업종별 통계
 router.get('/stats/category', getCategoryStats);
+
+// 월별 소비 통계
+router.get('/stats/monthly', getMonthlyStats);
+
+// 동년배 비교 데이터
+router.get('/comparison', getPeerComparison);
 
 // 대시보드 통계
 router.get('/dashboard', getDashboardStats);
