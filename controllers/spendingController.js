@@ -22,7 +22,7 @@ const addSpending = async (req, res) => {
   try {
     logToFile(`소비 데이터 추가 요청`);
     
-    const { sex, age, total_spent, card_tpbuz_nm_1 } = req.body;
+    const { sex, age, total_spent, card_tpbuz_nm_1, ta_ymd, description } = req.body;
     
     // 필수 필드 확인
     if (!sex || !age || !total_spent || !card_tpbuz_nm_1) {
@@ -39,7 +39,9 @@ const addSpending = async (req, res) => {
         sex,
         age,
         total_spent,
-        card_tpbuz_nm_1
+        card_tpbuz_nm_1,
+        ta_ymd,
+        description
       });
       
       logToFile(`소비 데이터 추가 완료: ID ${spending._id}`);
@@ -72,7 +74,9 @@ const getSpendingList = async (req, res) => {
       age, 
       minAmount, 
       maxAmount, 
-      category,
+      card_tpbuz_nm_1,
+      startDate,
+      endDate,
       page = 1, 
       limit = 10 
     } = req.query;
@@ -84,13 +88,20 @@ const getSpendingList = async (req, res) => {
     
     if (sex) filter.sex = sex;
     if (age) filter.age = parseInt(age);
-    if (category) filter.card_tpbuz_nm_1 = category;
+    if (card_tpbuz_nm_1) filter.card_tpbuz_nm_1 = card_tpbuz_nm_1;
     
     // 금액 범위 필터
     if (minAmount || maxAmount) {
       filter.total_spent = {};
       if (minAmount) filter.total_spent.$gte = parseFloat(minAmount);
       if (maxAmount) filter.total_spent.$lte = parseFloat(maxAmount);
+    }
+    
+    // 날짜 범위 필터
+    if (startDate || endDate) {
+      filter.ta_ymd = {};
+      if (startDate) filter.ta_ymd.$gte = startDate.replace(/-/g, '');
+      if (endDate) filter.ta_ymd.$lte = endDate.replace(/-/g, '');
     }
     
     // 소비 데이터 조회
@@ -149,7 +160,7 @@ const updateSpending = async (req, res) => {
   try {
     logToFile(`소비 데이터 수정 요청: ID ${req.params.id}`);
     
-    const { sex, age, total_spent, card_tpbuz_nm_1 } = req.body;
+    const { sex, age, total_spent, card_tpbuz_nm_1, ta_ymd, description } = req.body;
     
     // 소비 데이터 확인
     let spending = await Spending.findById(req.params.id);
@@ -165,6 +176,8 @@ const updateSpending = async (req, res) => {
     if (age !== undefined) updateData.age = parseInt(age);
     if (total_spent !== undefined) updateData.total_spent = parseFloat(total_spent);
     if (card_tpbuz_nm_1 !== undefined) updateData.card_tpbuz_nm_1 = card_tpbuz_nm_1;
+    if (ta_ymd !== undefined) updateData.ta_ymd = ta_ymd;
+    if (description !== undefined) updateData.description = description;
     
     // 소비 데이터 업데이트
     const updatedSpending = await Spending.findByIdAndUpdate(
@@ -299,15 +312,13 @@ const getAgeStats = async (req, res) => {
   try {
     logToFile(`연령별 통계 조회 요청`);
     
-    // 연령대 범위 설정
+    // 연령대 범위 설정 (50대~90대)
     const ageRanges = [
-      { min: 0, max: 19, label: '10대 이하' },
-      { min: 20, max: 29, label: '20대' },
-      { min: 30, max: 39, label: '30대' },
-      { min: 40, max: 49, label: '40대' },
-      { min: 50, max: 59, label: '50대' },
-      { min: 60, max: 69, label: '60대' },
-      { min: 70, max: 150, label: '70대 이상' }
+      { min: 5, max: 5, label: '50대' },
+      { min: 6, max: 6, label: '60대' },
+      { min: 7, max: 7, label: '70대' },
+      { min: 8, max: 8, label: '80대' },
+      { min: 9, max: 9, label: '90대' }
     ];
     
     // 연령대별 통계 결과 저장 배열
@@ -333,7 +344,7 @@ const getAgeStats = async (req, res) => {
       
       ageStats.push({
         ageGroup: range.label,
-        ageRange: `${range.min}-${range.max}`,
+        ageRange: `${range.min*10}-${range.max*10+9}`,
         totalSpent: stats.length > 0 ? stats[0].totalSpent : 0,
         avgSpent: stats.length > 0 ? Math.round(stats[0].avgSpent) : 0,
         count: stats.length > 0 ? stats[0].count : 0
@@ -448,15 +459,14 @@ const getCategoryStats = async (req, res) => {
           $match: { card_tpbuz_nm_1: category.category }
         },
         {
-          $bucket: {
-            groupBy: '$age',
-            boundaries: [0, 20, 30, 40, 50, 60, 70, 150],
-            default: 'Other',
-            output: {
-              totalSpent: { $sum: '$total_spent' },
-              count: { $sum: 1 }
-            }
+          $group: {
+            _id: '$age',
+            totalSpent: { $sum: '$total_spent' },
+            count: { $sum: 1 }
           }
+        },
+        {
+          $sort: { _id: 1 }
         }
       ]);
       
@@ -464,13 +474,7 @@ const getCategoryStats = async (req, res) => {
         category: category.category,
         genderDistribution,
         ageDistribution: ageDistribution.map(age => ({
-          ageGroup: age._id === 0 ? '0-19' : 
-                    age._id === 20 ? '20-29' : 
-                    age._id === 30 ? '30-39' : 
-                    age._id === 40 ? '40-49' : 
-                    age._id === 50 ? '50-59' : 
-                    age._id === 60 ? '60-69' : 
-                    age._id === 70 ? '70+' : 'Other',
+          ageGroup: `${age._id*10}대`,
           totalSpent: age.totalSpent,
           count: age.count
         }))
@@ -522,19 +526,18 @@ const getDashboardStats = async (req, res) => {
       }
     ]);
     
-    // 연령대별 분포
+    // 연령대별 분포 (5-9를 50대에서 90대로 표시)
     const ageDistribution = await Spending.aggregate([
       {
-        $bucket: {
-          groupBy: '$age',
-          boundaries: [0, 20, 30, 40, 50, 60, 70, 150],
-          default: 'Other',
-          output: {
-            total: { $sum: '$total_spent' },
-            count: { $sum: 1 },
-            avg: { $avg: '$total_spent' }
-          }
+        $group: {
+          _id: '$age',
+          total: { $sum: '$total_spent' },
+          count: { $sum: 1 },
+          avg: { $avg: '$total_spent' }
         }
+      },
+      {
+        $sort: { _id: 1 }
       }
     ]);
     
@@ -560,19 +563,7 @@ const getDashboardStats = async (req, res) => {
       {
         $group: {
           _id: {
-            ageGroup: {
-              $switch: {
-                branches: [
-                  { case: { $lt: ['$age', 20] }, then: '10대 이하' },
-                  { case: { $lt: ['$age', 30] }, then: '20대' },
-                  { case: { $lt: ['$age', 40] }, then: '30대' },
-                  { case: { $lt: ['$age', 50] }, then: '40대' },
-                  { case: { $lt: ['$age', 60] }, then: '50대' },
-                  { case: { $lt: ['$age', 70] }, then: '60대' }
-                ],
-                default: '70대 이상'
-              }
-            },
+            ageGroup: '$age',
             gender: '$sex'
           },
           total: { $sum: '$total_spent' },
@@ -598,13 +589,7 @@ const getDashboardStats = async (req, res) => {
           avgSpent: Math.round(item.avg)
         })),
         ageDistribution: ageDistribution.map(item => ({
-          ageGroup: item._id === 0 ? '0-19' : 
-                    item._id === 20 ? '20-29' : 
-                    item._id === 30 ? '30-39' : 
-                    item._id === 40 ? '40-49' : 
-                    item._id === 50 ? '50-59' : 
-                    item._id === 60 ? '60-69' : 
-                    item._id === 70 ? '70+' : 'Other',
+          ageGroup: `${item._id*10}대`,
           totalSpent: item.total,
           count: item.count,
           avgSpent: Math.round(item.avg)
@@ -615,7 +600,7 @@ const getDashboardStats = async (req, res) => {
           count: item.count
         })),
         ageGenderCombinations: ageGenderCombinations.map(item => ({
-          ageGroup: item._id.ageGroup,
+          ageGroup: `${item._id.ageGroup*10}대`,
           gender: item._id.gender,
           totalSpent: item.total,
           count: item.count,
@@ -629,14 +614,149 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
-module.exports = {
-  addSpending,
-  getSpendingList,
-  getSpendingById,
-  updateSpending,
-  deleteSpending,
-  getGenderStats,
-  getAgeStats,
-  getCategoryStats,
-  getDashboardStats
+// 월별 소비 통계
+const getMonthlyStats = async (req, res) => {
+  try {
+    logToFile(`월별 소비 통계 조회 요청`);
+    
+    const { year, month } = req.query;
+    
+    if (!year || !month) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '연도와 월은 필수 매개변수입니다.' 
+      });
+    }
+    
+    // 해당 월의 시작일과 종료일 계산
+    const startDate = `${year}${month.padStart(2, '0')}01`;
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+    const endDate = `${year}${month.padStart(2, '0')}${lastDay}`;
+    
+    // 월 총 지출 통계
+    const monthlyTotal = await Spending.aggregate([
+      {
+        $match: {
+          ta_ymd: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalSpending: { $sum: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // 업종별 지출 통계
+    const categorySummary = await Spending.aggregate([
+      {
+        $match: {
+          ta_ymd: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$card_tpbuz_nm_1',
+          total: { $sum: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { total: -1 }
+      }
+    ]);
+    
+    // 전체 지출 중 업종별 비율 계산
+    const totalAmount = monthlyTotal.length > 0 ? monthlyTotal[0].totalSpending : 0;
+    
+    const categoriesWithPercentage = categorySummary.map(cat => ({
+      category: cat._id,
+      total: cat.total,
+      count: cat.count,
+      percentage: totalAmount > 0 ? Math.round((cat.total / totalAmount) * 100) : 0
+    }));
+    
+    // 일별 지출 통계
+    const dailySummary = await Spending.aggregate([
+      {
+        $match: {
+          ta_ymd: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$ta_ymd',
+          total: { $sum: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
+    
+    const formattedDailySummary = dailySummary.map(day => {
+      const dateStr = day._id;
+      const yearPart = dateStr.substring(0, 4);
+      const monthPart = dateStr.substring(4, 6);
+      const dayPart = dateStr.substring(6, 8);
+      
+      return {
+        day: parseInt(dayPart),
+        date: `${yearPart}-${monthPart}-${dayPart}`,
+        total: day.total,
+        count: day.count
+      };
+    });
+    
+    logToFile(`월별 소비 통계 조회 완료`);
+    
+    res.json({
+      success: true,
+      data: {
+        year: parseInt(year),
+        month: parseInt(month),
+        totalSpending: totalAmount,
+        transactionCount: monthlyTotal.length > 0 ? monthlyTotal[0].count : 0,
+        categorySummary: categoriesWithPercentage,
+        dailySummary: formattedDailySummary
+      }
+    });
+  } catch (error) {
+    logToFile(`월별 소비 통계 조회 오류: ${error.message}`, 'ERROR');
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
 };
+
+// 동년배 비교 데이터
+const getPeerComparison = async (req, res) => {
+  try {
+    logToFile(`동년배 비교 데이터 조회 요청`);
+    
+    const { age, sex, year, month } = req.query;
+    
+    // 사용자의 연령과 성별이 필요합니다
+    if (!age) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '연령은 필수 매개변수입니다.' 
+      });
+    }
+    
+    const userAge = parseInt(age); // 5는 50대, 6은 60대, ...
+    
+    // 해당 월의 시작일과 종료일 계산 (있을 경우)
+    let dateFilter = {};
+    if (year && month) {
+      const startDate = `${year}${month.padStart(2, '0')}01`;
+      const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+      const endDate = `${year}${month.padStart(2, '0')}${lastDay}`;
+      
+      dateFilter = {
+        ta_ymd: { $gte: startDate, $lte: endDate }
+      };
+    }
+    
+    // 사용자 자신의 지출 패턴
