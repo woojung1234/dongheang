@@ -7,6 +7,9 @@ import axios from 'axios';
 import Header from '../components/Header';
 import SpendingItem from '../components/SpendingItem';
 
+// API 기본 URL 설정
+const API_BASE_URL = 'http://localhost:5000'; // 백엔드 서버 주소로 변경하세요
+
 const ConsumptionHistory = () => {
   const navigate = useNavigate();
   const [spendings, setSpendings] = useState([]);
@@ -44,64 +47,24 @@ const ConsumptionHistory = () => {
   const fetchSpendings = async () => {
     try {
       setLoading(true);
-      console.log('소비 내역 데이터 불러오는 중...');
+      console.log('소비 내역 데이터 불러오는 중...', filters);
       
-      // 실제 API 호출 대신 더미 데이터 사용 (개발 단계)
-      // const response = await axios.get('/api/spending', {
-      //   params: { ...filters }
-      // });
+      // 실제 API 호출
+      const response = await axios.get(`${API_BASE_URL}/api/spending`, {
+        params: { ...filters }
+      });
       
-      // 더미 데이터 - CSV 파일 형식에 맞게 수정
-      const dummyData = [
-        {
-          id: '1',
-          total_spent: 15000,
-          card_tpbuz_nm_1: '소매/유통',
-          description: '마트 장보기',
-          ta_ymd: '20250420',
-          sex: 'F',
-          age: 6
-        },
-        {
-          id: '2',
-          total_spent: 30000,
-          card_tpbuz_nm_1: '생활서비스',
-          description: '이발소',
-          ta_ymd: '20250418',
-          sex: 'M',
-          age: 7
-        },
-        {
-          id: '3',
-          total_spent: 50000,
-          card_tpbuz_nm_1: '의료/건강',
-          description: '병원 진료비',
-          ta_ymd: '20250415',
-          sex: 'M',
-          age: 8
-        },
-        {
-          id: '4',
-          total_spent: 25000,
-          card_tpbuz_nm_1: '공연/전시',
-          description: '영화 관람',
-          ta_ymd: '20250410',
-          sex: 'F',
-          age: 5
-        }
-      ];
-      
-      // 1초 지연 (로딩 시뮬레이션)
-      setTimeout(() => {
-        console.log('소비 내역 데이터 로드 완료:', dummyData);
-        setSpendings(dummyData);
-        setLoading(false);
-      }, 1000);
+      console.log('API 응답 데이터:', response.data);
+      setSpendings(response.data);
+      setLoading(false);
       
     } catch (error) {
       console.error('소비 내역 데이터 로드 오류:', error);
       setError('소비 내역을 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
+      
+      // 에러 발생 시에도 UI를 표시하기 위한 빈 배열 설정
+      setSpendings([]);
     }
   };
   
@@ -147,19 +110,13 @@ const ConsumptionHistory = () => {
         return;
       }
       
-      // 실제 API 호출 대신 임시 처리 (개발 단계)
-      // const response = await axios.post('/api/spending', newSpending);
+      // 실제 API 호출
+      const response = await axios.post(`${API_BASE_URL}/api/spending`, newSpending);
       
-      // 임시 추가 (API 연동 전)
-      const tempId = Date.now().toString();
-      const newItem = {
-        id: tempId,
-        ...newSpending,
-        total_spent: parseFloat(newSpending.total_spent)
-      };
+      console.log('소비 내역 추가 응답:', response.data);
       
-      setSpendings(prev => [newItem, ...prev]);
-      console.log('소비 내역 추가됨:', newItem);
+      // 목록 업데이트
+      await fetchSpendings();
       
       // 폼 초기화
       setNewSpending({
@@ -206,12 +163,13 @@ const ConsumptionHistory = () => {
     try {
       console.log('소비 내역 삭제 중...', id);
       
-      // 실제 API 호출 대신 임시 처리 (개발 단계)
-      // await axios.delete(`/api/spending/${id}`);
+      // 실제 API 호출
+      await axios.delete(`${API_BASE_URL}/api/spending/${id}`);
       
-      // 임시 삭제 처리
-      setSpendings(prev => prev.filter(item => item.id !== id));
       console.log('소비 내역 삭제됨:', id);
+      
+      // 목록 다시 불러오기
+      await fetchSpendings();
       
     } catch (error) {
       console.error('소비 내역 삭제 오류:', error);
@@ -221,7 +179,7 @@ const ConsumptionHistory = () => {
   
   // 날짜 포맷 변환 (YYYYMMDD → YYYY-MM-DD)
   const formatDateForInput = (dateStr) => {
-    if (dateStr.length === 8) {
+    if (dateStr && dateStr.length === 8) {
       return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
     }
     return dateStr;
