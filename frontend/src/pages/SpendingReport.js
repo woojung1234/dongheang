@@ -13,6 +13,9 @@ import Header from '../components/Header';
 // Chart.js 등록
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
+// API 기본 URL 설정
+const API_BASE_URL = 'http://localhost:5000'; // 백엔드 서버 주소로 변경하세요
+
 const SpendingReport = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -27,8 +30,12 @@ const SpendingReport = () => {
   
   // 데이터 불러오기
   useEffect(() => {
-    fetchMonthlyData();
-    fetchComparisonData();
+    const fetchData = async () => {
+      await fetchMonthlyData();
+      await fetchComparisonData();
+    };
+    
+    fetchData();
   }, [selectedYear, selectedMonth]);
   
   // 월별 소비 통계 불러오기
@@ -37,44 +44,32 @@ const SpendingReport = () => {
       setLoading(true);
       console.log('월별 소비 통계 데이터 불러오는 중...', selectedYear, selectedMonth);
       
-      // 실제 API 호출 대신 더미 데이터 사용 (개발 단계)
-      // const response = await axios.get('/api/spending/stats/monthly', {
-      //   params: { year: selectedYear, month: selectedMonth }
-      // });
+      // 실제 API 호출
+      const response = await axios.get(`${API_BASE_URL}/api/spending/stats/monthly`, {
+        params: { 
+          year: selectedYear, 
+          month: selectedMonth 
+        }
+      });
       
-      // 더미 데이터 - CSV 데이터에 맞게 수정
-      const dummyData = {
-        year: selectedYear,
-        month: selectedMonth,
-        totalSpending: 1250000,
-        categorySummary: [
-          { category: '소매/유통', total: 450000, count: 15, percentage: 36 },
-          { category: '생활서비스', total: 150000, count: 8, percentage: 12 },
-          { category: '여가/오락', total: 300000, count: 2, percentage: 24 },
-          { category: '의료/건강', total: 80000, count: 3, percentage: 6 },
-          { category: '음식', total: 120000, count: 4, percentage: 10 },
-          { category: '학문/교육', total: 50000, count: 2, percentage: 4 },
-          { category: '공연/전시', total: 60000, count: 3, percentage: 5 },
-          { category: '미디어/통신', total: 40000, count: 2, percentage: 3 }
-        ],
-        dailySummary: Array.from({ length: 30 }, (_, i) => ({
-          day: i + 1,
-          date: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`,
-          total: Math.floor(Math.random() * 50000)
-        }))
-      };
-      
-      // 1초 지연 (로딩 시뮬레이션)
-      setTimeout(() => {
-        console.log('월별 소비 통계 데이터 로드 완료:', dummyData);
-        setMonthlyData(dummyData);
-        setLoading(false);
-      }, 1000);
+      console.log('API 응답 데이터:', response.data);
+      setMonthlyData(response.data);
+      setLoading(false);
       
     } catch (error) {
       console.error('월별 소비 통계 데이터 로드 오류:', error);
       setError('소비 통계를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
+      
+      // 에러 발생 시에도 UI를 표시하기 위한 임시 데이터 설정
+      // 실제 환경에서 필요에 따라 제거하거나 수정하세요
+      setMonthlyData({
+        year: selectedYear,
+        month: selectedMonth,
+        totalSpending: 0,
+        categorySummary: [],
+        dailySummary: []
+      });
     }
   };
   
@@ -83,29 +78,16 @@ const SpendingReport = () => {
     try {
       console.log('동년배 비교 데이터 불러오는 중...');
       
-      // 실제 API 호출 대신 더미 데이터 사용 (개발 단계)
-      // const response = await axios.get('/api/spending/comparison', {
-      //   params: { year: selectedYear, month: selectedMonth }
-      // });
+      // 실제 API 호출
+      const response = await axios.get(`${API_BASE_URL}/api/spending/comparison`, {
+        params: { 
+          year: selectedYear, 
+          month: selectedMonth 
+        }
+      });
       
-      // 더미 데이터 - CSV 데이터 카테고리에 맞게 수정
-      const dummyData = {
-        userSpending: 1250000,
-        peerAverage: 1400000,
-        categoryComparison: [
-          { category: '소매/유통', userAmount: 450000, peerAmount: 420000 },
-          { category: '생활서비스', userAmount: 150000, peerAmount: 180000 },
-          { category: '여가/오락', userAmount: 300000, peerAmount: 350000 },
-          { category: '의료/건강', userAmount: 80000, peerAmount: 90000 },
-          { category: '음식', userAmount: 120000, peerAmount: 200000 },
-          { category: '학문/교육', userAmount: 50000, peerAmount: 80000 },
-          { category: '공연/전시', userAmount: 60000, peerAmount: 70000 },
-          { category: '미디어/통신', userAmount: 40000, peerAmount: 60000 }
-        ]
-      };
-      
-      console.log('동년배 비교 데이터 로드 완료:', dummyData);
-      setComparisonData(dummyData);
+      console.log('API 응답 데이터:', response.data);
+      setComparisonData(response.data);
       
     } catch (error) {
       console.error('동년배 비교 데이터 로드 오류:', error);
@@ -115,7 +97,7 @@ const SpendingReport = () => {
   
   // 차트 데이터 구성
   const getPieChartData = () => {
-    if (!monthlyData) return null;
+    if (!monthlyData || !monthlyData.categorySummary || monthlyData.categorySummary.length === 0) return null;
     
     const labels = monthlyData.categorySummary.map(item => item.category);
     const data = monthlyData.categorySummary.map(item => item.total);
@@ -143,7 +125,7 @@ const SpendingReport = () => {
   };
   
   const getBarChartData = () => {
-    if (!monthlyData) return null;
+    if (!monthlyData || !monthlyData.dailySummary || monthlyData.dailySummary.length === 0) return null;
     
     // 주별로 그룹화
     const weeks = [[], [], [], [], []];
@@ -174,7 +156,7 @@ const SpendingReport = () => {
   };
   
   const getComparisonChartData = () => {
-    if (!comparisonData) return null;
+    if (!comparisonData || !comparisonData.categoryComparison || comparisonData.categoryComparison.length === 0) return null;
     
     return {
       labels: comparisonData.categoryComparison.map(item => item.category),
@@ -356,7 +338,7 @@ const SpendingReport = () => {
             <div className="total-spending card">
               <h2>월별 총 지출</h2>
               <div className="total-amount">
-                {monthlyData.totalSpending.toLocaleString()}원
+                {monthlyData.totalSpending ? monthlyData.totalSpending.toLocaleString() : 0}원
               </div>
               {comparisonData && (
                 <div className="comparison-summary">
@@ -382,7 +364,7 @@ const SpendingReport = () => {
                 )}
               </div>
               <div className="category-details">
-                {monthlyData.categorySummary.map((category, index) => (
+                {monthlyData.categorySummary && monthlyData.categorySummary.map((category, index) => (
                   <div key={index} className="category-item">
                     <div className="category-name">{category.category}</div>
                     <div className="category-amount">{category.total.toLocaleString()}원</div>
@@ -412,15 +394,19 @@ const SpendingReport = () => {
                   )}
                 </div>
                 <div className="comparison-insight">
-                  <h3>소비 패턴 분석</h3>
-                  <p>
-                    당신은 동년배보다 소매/유통({(comparisonData.categoryComparison[0].userAmount - comparisonData.categoryComparison[0].peerAmount).toLocaleString()}원)에 더 많이 지출하고,
-                    음식({(comparisonData.categoryComparison[4].peerAmount - comparisonData.categoryComparison[4].userAmount).toLocaleString()}원)에는 덜 지출하고 있습니다.
-                  </p>
-                  <p>
-                    전체적으로 동년배 평균보다 {comparisonData.userSpending < comparisonData.peerAverage ? '적게' : '많이'} 지출하고 있어요.
-                    {comparisonData.userSpending > comparisonData.peerAverage && ' 지출 관리에 좀 더 신경 쓰면 좋을 것 같아요.'}
-                  </p>
+                  {comparisonData.categoryComparison && comparisonData.categoryComparison.length > 0 && (
+                    <>
+                      <h3>소비 패턴 분석</h3>
+                      <p>
+                        당신은 동년배보다 {comparisonData.categoryComparison[0].category}({(comparisonData.categoryComparison[0].userAmount - comparisonData.categoryComparison[0].peerAmount).toLocaleString()}원)에 더 많이 지출하고,
+                        {comparisonData.categoryComparison.length > 4 ? comparisonData.categoryComparison[4].category : '다른 카테고리'}({comparisonData.categoryComparison.length > 4 ? (comparisonData.categoryComparison[4].peerAmount - comparisonData.categoryComparison[4].userAmount).toLocaleString() : 0}원)에는 덜 지출하고 있습니다.
+                      </p>
+                      <p>
+                        전체적으로 동년배 평균보다 {comparisonData.userSpending < comparisonData.peerAverage ? '적게' : '많이'} 지출하고 있어요.
+                        {comparisonData.userSpending > comparisonData.peerAverage && ' 지출 관리에 좀 더 신경 쓰면 좋을 것 같아요.'}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -429,18 +415,26 @@ const SpendingReport = () => {
             <div className="spending-advice card">
               <h2>이번 달 지출 조언</h2>
               <div className="advice-content">
-                <p>
-                  소매/유통이 전체 지출의 {monthlyData.categorySummary[0].percentage}%를 차지하고 있습니다. 
-                  생필품 구매 계획을 세워 불필요한 지출을 줄여보세요.
-                </p>
-                <p>
-                  여가/오락 비용은 전체의 {monthlyData.categorySummary[2].percentage}%를 차지합니다.
-                  지역 내 무료 문화 행사나 공공시설을 활용하면 비용을 절약할 수 있습니다.
-                </p>
-                <p>
-                  다음 달 예상 지출은 약 {(monthlyData.totalSpending * 0.95).toLocaleString()}원 정도로 예상됩니다.
-                  계획적인 소비로 금액을 더 줄여보세요!
-                </p>
+                {monthlyData.categorySummary && monthlyData.categorySummary.length > 0 ? (
+                  <>
+                    <p>
+                      {monthlyData.categorySummary[0].category}이 전체 지출의 {monthlyData.categorySummary[0].percentage}%를 차지하고 있습니다. 
+                      생필품 구매 계획을 세워 불필요한 지출을 줄여보세요.
+                    </p>
+                    {monthlyData.categorySummary.length > 2 && (
+                      <p>
+                        {monthlyData.categorySummary[2].category} 비용은 전체의 {monthlyData.categorySummary[2].percentage}%를 차지합니다.
+                        지역 내 무료 문화 행사나 공공시설을 활용하면 비용을 절약할 수 있습니다.
+                      </p>
+                    )}
+                    <p>
+                      다음 달 예상 지출은 약 {(monthlyData.totalSpending * 0.95).toLocaleString()}원 정도로 예상됩니다.
+                      계획적인 소비로 금액을 더 줄여보세요!
+                    </p>
+                  </>
+                ) : (
+                  <p>아직 충분한 소비 데이터가 없어 조언을 제공할 수 없습니다.</p>
+                )}
               </div>
             </div>
           </div>
