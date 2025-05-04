@@ -17,20 +17,23 @@ const ConsumptionHistory = () => {
   
   // 새 소비 내역 상태
   const [newSpending, setNewSpending] = useState({
-    amount: '',
-    category: '식비',
+    total_spent: '',
+    card_tpbuz_nm_1: '소매/유통',
     description: '',
-    date: new Date().toISOString().split('T')[0],
-    paymentMethod: '카드'
+    ta_ymd: new Date().toISOString().split('T')[0].replace(/-/g, ''),
+    sex: 'M',
+    age: 5
   });
   
   // 필터 상태
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
-    category: '',
+    card_tpbuz_nm_1: '',
     minAmount: '',
-    maxAmount: ''
+    maxAmount: '',
+    age: '',
+    sex: ''
   });
   
   // 소비 내역 불러오기
@@ -48,39 +51,43 @@ const ConsumptionHistory = () => {
       //   params: { ...filters }
       // });
       
-      // 더미 데이터
+      // 더미 데이터 - CSV 파일 형식에 맞게 수정
       const dummyData = [
         {
           id: '1',
-          amount: 15000,
-          category: '식비',
-          description: '점심식사',
-          date: '2025-04-20',
-          paymentMethod: '카드'
+          total_spent: 15000,
+          card_tpbuz_nm_1: '소매/유통',
+          description: '마트 장보기',
+          ta_ymd: '20250420',
+          sex: 'F',
+          age: 6
         },
         {
           id: '2',
-          amount: 30000,
-          category: '교통',
-          description: '택시비',
-          date: '2025-04-18',
-          paymentMethod: '카드'
+          total_spent: 30000,
+          card_tpbuz_nm_1: '생활서비스',
+          description: '이발소',
+          ta_ymd: '20250418',
+          sex: 'M',
+          age: 7
         },
         {
           id: '3',
-          amount: 50000,
-          category: '의료',
+          total_spent: 50000,
+          card_tpbuz_nm_1: '의료/건강',
           description: '병원 진료비',
-          date: '2025-04-15',
-          paymentMethod: '현금'
+          ta_ymd: '20250415',
+          sex: 'M',
+          age: 8
         },
         {
           id: '4',
-          amount: 25000,
-          category: '문화',
+          total_spent: 25000,
+          card_tpbuz_nm_1: '공연/전시',
           description: '영화 관람',
-          date: '2025-04-10',
-          paymentMethod: '카드'
+          ta_ymd: '20250410',
+          sex: 'F',
+          age: 5
         }
       ];
       
@@ -101,6 +108,17 @@ const ConsumptionHistory = () => {
   // 폼 입력 변경 처리
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // 날짜 포맷 변환 (YYYY-MM-DD → YYYYMMDD)
+    if (name === 'ta_ymd_formatted') {
+      const formattedDate = value.replace(/-/g, '');
+      setNewSpending(prev => ({
+        ...prev,
+        ta_ymd: formattedDate
+      }));
+      return;
+    }
+    
     setNewSpending(prev => ({
       ...prev,
       [name]: value
@@ -124,7 +142,7 @@ const ConsumptionHistory = () => {
       console.log('소비 내역 추가 중...', newSpending);
       
       // 입력 검증
-      if (!newSpending.amount || !newSpending.category) {
+      if (!newSpending.total_spent || !newSpending.card_tpbuz_nm_1) {
         setError('금액과 카테고리는 필수 입력사항입니다.');
         return;
       }
@@ -137,7 +155,7 @@ const ConsumptionHistory = () => {
       const newItem = {
         id: tempId,
         ...newSpending,
-        amount: parseFloat(newSpending.amount)
+        total_spent: parseFloat(newSpending.total_spent)
       };
       
       setSpendings(prev => [newItem, ...prev]);
@@ -145,11 +163,12 @@ const ConsumptionHistory = () => {
       
       // 폼 초기화
       setNewSpending({
-        amount: '',
-        category: '식비',
+        total_spent: '',
+        card_tpbuz_nm_1: '소매/유통',
         description: '',
-        date: new Date().toISOString().split('T')[0],
-        paymentMethod: '카드'
+        ta_ymd: new Date().toISOString().split('T')[0].replace(/-/g, ''),
+        sex: 'M',
+        age: 5
       });
       
       // 폼 닫기
@@ -174,9 +193,11 @@ const ConsumptionHistory = () => {
     setFilters({
       startDate: '',
       endDate: '',
-      category: '',
+      card_tpbuz_nm_1: '',
       minAmount: '',
-      maxAmount: ''
+      maxAmount: '',
+      age: '',
+      sex: ''
     });
   };
   
@@ -196,6 +217,14 @@ const ConsumptionHistory = () => {
       console.error('소비 내역 삭제 오류:', error);
       setError('소비 내역 삭제 중 오류가 발생했습니다.');
     }
+  };
+  
+  // 날짜 포맷 변환 (YYYYMMDD → YYYY-MM-DD)
+  const formatDateForInput = (dateStr) => {
+    if (dateStr.length === 8) {
+      return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+    }
+    return dateStr;
   };
   
   return (
@@ -251,20 +280,47 @@ const ConsumptionHistory = () => {
             <div className="form-group">
               <label>카테고리</label>
               <select 
-                name="category" 
-                value={filters.category}
+                name="card_tpbuz_nm_1" 
+                value={filters.card_tpbuz_nm_1}
                 onChange={handleFilterChange}
               >
                 <option value="">전체</option>
-                <option value="식비">식비</option>
-                <option value="교통">교통</option>
-                <option value="주거">주거</option>
-                <option value="의료">의료</option>
-                <option value="교육">교육</option>
-                <option value="문화">문화</option>
-                <option value="의류">의류</option>
-                <option value="통신">통신</option>
-                <option value="기타">기타</option>
+                <option value="소매/유통">소매/유통</option>
+                <option value="생활서비스">생활서비스</option>
+                <option value="여가/오락">여가/오락</option>
+                <option value="음식">음식</option>
+                <option value="학문/교육">학문/교육</option>
+                <option value="의료/건강">의료/건강</option>
+                <option value="공연/전시">공연/전시</option>
+                <option value="공공/기업/단체">공공/기업/단체</option>
+                <option value="미디어/통신">미디어/통신</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>연령대</label>
+              <select 
+                name="age" 
+                value={filters.age}
+                onChange={handleFilterChange}
+              >
+                <option value="">전체</option>
+                <option value="5">50대</option>
+                <option value="6">60대</option>
+                <option value="7">70대</option>
+                <option value="8">80대</option>
+                <option value="9">90대</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>성별</label>
+              <select 
+                name="sex" 
+                value={filters.sex}
+                onChange={handleFilterChange}
+              >
+                <option value="">전체</option>
+                <option value="M">남성</option>
+                <option value="F">여성</option>
               </select>
             </div>
             <div className="form-group">
@@ -284,7 +340,7 @@ const ConsumptionHistory = () => {
                 name="maxAmount"
                 value={filters.maxAmount}
                 onChange={handleFilterChange}
-                placeholder="100,000"
+                placeholder="1,000,000"
               />
             </div>
             <div className="form-actions">
@@ -313,8 +369,8 @@ const ConsumptionHistory = () => {
                 <label>금액 *</label>
                 <input
                   type="number"
-                  name="amount"
-                  value={newSpending.amount}
+                  name="total_spent"
+                  value={newSpending.total_spent}
                   onChange={handleInputChange}
                   placeholder="0"
                   required
@@ -323,20 +379,20 @@ const ConsumptionHistory = () => {
               <div className="form-group">
                 <label>카테고리 *</label>
                 <select 
-                  name="category" 
-                  value={newSpending.category}
+                  name="card_tpbuz_nm_1" 
+                  value={newSpending.card_tpbuz_nm_1}
                   onChange={handleInputChange}
                   required
                 >
-                  <option value="식비">식비</option>
-                  <option value="교통">교통</option>
-                  <option value="주거">주거</option>
-                  <option value="의료">의료</option>
-                  <option value="교육">교육</option>
-                  <option value="문화">문화</option>
-                  <option value="의류">의류</option>
-                  <option value="통신">통신</option>
-                  <option value="기타">기타</option>
+                  <option value="소매/유통">소매/유통</option>
+                  <option value="생활서비스">생활서비스</option>
+                  <option value="여가/오락">여가/오락</option>
+                  <option value="음식">음식</option>
+                  <option value="학문/교육">학문/교육</option>
+                  <option value="의료/건강">의료/건강</option>
+                  <option value="공연/전시">공연/전시</option>
+                  <option value="공공/기업/단체">공공/기업/단체</option>
+                  <option value="미디어/통신">미디어/통신</option>
                 </select>
               </div>
               <div className="form-group">
@@ -353,23 +409,34 @@ const ConsumptionHistory = () => {
                 <label>날짜</label>
                 <input
                   type="date"
-                  name="date"
-                  value={newSpending.date}
+                  name="ta_ymd_formatted"
+                  value={formatDateForInput(newSpending.ta_ymd)}
                   onChange={handleInputChange}
                 />
               </div>
               <div className="form-group">
-                <label>결제 방법</label>
-                <select 
-                  name="paymentMethod" 
-                  value={newSpending.paymentMethod}
+                <label>성별</label>
+                <select
+                  name="sex"
+                  value={newSpending.sex}
                   onChange={handleInputChange}
                 >
-                  <option value="카드">카드</option>
-                  <option value="현금">현금</option>
-                  <option value="계좌이체">계좌이체</option>
-                  <option value="모바일결제">모바일결제</option>
-                  <option value="기타">기타</option>
+                  <option value="M">남성</option>
+                  <option value="F">여성</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>연령대</label>
+                <select
+                  name="age"
+                  value={newSpending.age}
+                  onChange={handleInputChange}
+                >
+                  <option value="5">50대</option>
+                  <option value="6">60대</option>
+                  <option value="7">70대</option>
+                  <option value="8">80대</option>
+                  <option value="9">90대</option>
                 </select>
               </div>
               <div className="form-actions">
