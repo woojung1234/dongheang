@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Alert, Form, Button, Spinner } from 'react-bootstrap';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+  PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  LineChart, Line
 } from 'recharts';
 import { getComparisonStats } from '../services/spendingService';
 import Layout from '../components/Layout';
@@ -139,6 +140,17 @@ const PeerComparison = () => {
       사용자: item?.userAmount > 0 ? Math.log10(item.userAmount) : 0,
       동년배평균: item?.peerAmount > 0 ? Math.log10(item.peerAmount) : 0,
       fullMark: 6
+    }));
+  };
+
+  // 일별 비교 차트 데이터
+  const prepareDailyComparisonData = () => {
+    if (!comparisonData || !Array.isArray(comparisonData.dailyComparison)) return [];
+    
+    return comparisonData.dailyComparison.map(item => ({
+      day: item.day,
+      사용자: item.userAmount || 0,
+      동년배평균: item.peerAmount || 0
     }));
   };
 
@@ -385,6 +397,29 @@ const PeerComparison = () => {
                     <Bar dataKey="사용자" fill="#8884d8" />
                     <Bar dataKey="동년배평균" fill="#82ca9d" />
                   </BarChart>
+                </ResponsiveContainer>
+              </Card.Body>
+            </Card>
+
+            {/* 일별 비교 차트 */}
+            <Card className="mb-4">
+              <Card.Header>
+                <h5 className="mb-0">일별 소비 비교</h5>
+              </Card.Header>
+              <Card.Body>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart
+                    data={prepareDailyComparisonData()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line type="monotone" dataKey="사용자" stroke="#8884d8" />
+                    <Line type="monotone" dataKey="동년배평균" stroke="#82ca9d" />
+                  </LineChart>
                 </ResponsiveContainer>
               </Card.Body>
             </Card>
