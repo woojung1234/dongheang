@@ -760,3 +760,281 @@ const getPeerComparison = async (req, res) => {
     }
     
     // 사용자 자신의 지출 패턴
+    let userFilter = {
+      age: userAge
+    };
+    
+    // 성별 필터 추가 (있을 경우)
+    if (sex) {
+      userFilter.sex = sex;
+    }
+    
+    // 날짜 필터 추가 (있을 경우)
+    if (Object.keys(dateFilter).length > 0) {
+      userFilter = { ...userFilter, ...dateFilter };
+    }
+    
+    // 사용자 연령대 사용자들의 평균 지출 및 카테고리별 지출 통계
+    const userAgeGroupStats = await Spending.aggregate([
+      {
+        $match: userFilter
+      },
+      {
+        $group: {
+          _id: null,
+          totalSpent: { $sum: '$total_spent' },
+          avgSpent: { $avg: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // 사용자 연령대의 카테고리별 지출 통계
+    const userAgeGroupCategoryStats = await Spending.aggregate([
+      {
+        $match: userFilter
+      },
+      {
+        $group: {
+          _id: '$card_tpbuz_nm_1',
+          totalSpent: { $sum: '$total_spent' },
+          avgSpent: { $avg: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { totalSpent: -1 }
+      },
+      {
+        $limit: 5 // 상위 5개 카테고리
+      }
+    ]);
+    
+    // 다른 연령대 평균 지출 통계 (비교용)
+    const otherAgeGroups = [5, 6, 7, 8, 9].filter(a => a !== userAge);
+    
+    const otherAgeGroupsStats = [];
+    
+    for (const otherAge of otherAgeGroups) {
+      let otherFilter = {
+        age: otherAge
+      };
+      
+      // 성별 필터 추가 (동일하게 적용)
+      if (sex) {
+        otherFilter.sex = sex;
+      }
+      
+      // 날짜 필터 추가 (있을 경우)
+      if (Object.keys(dateFilter).length > 0) {
+        otherFilter = { ...otherFilter, ...dateFilter };
+      }
+      
+      const ageStats = await Spending.aggregate([
+        {
+          $match: otherFilter
+        },
+        {
+          $group: {
+            _id: null,
+            totalSpent: { $sum: '$total_spent' },
+            avgSpent: { $avg: '$total_spent' },
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+      
+      otherAgeGroupsStats.push({
+        ageGroup: `${otherAge*10}대`,
+        totalSpent: ageStats.length > 0 ? ageStats[0].totalSpent : 0,
+        avgSpent: ageStats.length > 0 ? Math.round(ageStats[0].avgSpent) : 0,
+        count: ageStats.length > 0 ? ageStats[0].count : 0
+      });
+    }
+    
+    // 동일 연령대 다른 성별 비교 (성별이 주어진 경우)
+    let oppositeSexStats = null;
+    
+    if (sex) {
+      const oppositeSex = sex === 'M' ? 'F' : 'M';
+      let oppositeSexFilter = {
+        age: userAge,
+        sex: oppositeSex
+      };
+      
+      // 날짜 필터 추가 (있을 경우)
+      if (Object.keys(dateFilter).length > 0) {
+        oppositeSexFilter = { ...oppositeSexFilter, ...dateFilter };
+      }
+      
+      const oppositeSexAggregation = await Spending.aggregate([
+        {
+          $match: oppositeSexFilter
+        },
+        {
+          $group: {
+            _id: null,
+            totalSpent: { $sum: '$total_spent' },
+            avgSpent: { $avg: '$total_spent' },
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+      
+      // 동일 연령대 다른 성별의 카테고리별 통계
+      const oppositeSexCategoryStats = await Spending.aggregate([
+        {
+          $match: oppositeSexFilter
+        },
+        {
+          $group: {
+            _id: '$card_tpbuz_nm_1',
+            totalSpent: { $sum: '$total_spent' },
+            avgSpent: { $avg: '$total_spent' },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { totalSpent: -1 }
+        },
+        {
+          $limit: 5 // 상위 5개 카테고리
+        }
+      ]);
+      
+      oppositeSexStats = {
+        sex: oppositeSex,
+        stats: oppositeSexAggregation.length > 0 ? {
+          totalSpent: oppositeSexAggregation[0].totalSpent,
+          avgSpent: Math.round(oppositeSexAggregation[0].avgSpent),
+          count: oppositeSexAggregation[0].count
+        } : {
+          totalSpent: 0,
+          avgSpent: 0,
+          count: 0
+        },
+        topCategories: oppositeSexCategoryStats.map(cat => ({
+          category: cat._id,
+          totalSpent: cat.totalSpent,
+          avgSpent: Math.round(cat.avgSpent),
+          count: cat.count
+        }))
+      };
+    }
+    
+    // 모든 연령대와 성별 평균 (비교 기준점)
+    const overallStats = await Spending.aggregate([
+      {
+        $match: Object.keys(dateFilter).length > 0 ? dateFilter : {}
+      },
+      {
+        $group: {
+          _id: null,
+          totalSpent: { $sum: '$total_spent' },
+          avgSpent: { $avg: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    
+    // 상위 지출 업종 카테고리별 평균 소비량 비교
+    const topCategories = userAgeGroupCategoryStats.map(cat => cat._id);
+    
+    const categoriesComparison = [];
+    
+    for (const category of topCategories) {
+      const categoryStats = await Spending.aggregate([
+        {
+          $match: {
+            card_tpbuz_nm_1: category,
+            ...(Object.keys(dateFilter).length > 0 ? dateFilter : {})
+          }
+        },
+        {
+          $group: {
+            _id: '$age',
+            totalSpent: { $sum: '$total_spent' },
+            avgSpent: { $avg: '$total_spent' },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { _id: 1 }
+        }
+      ]);
+      
+      categoriesComparison.push({
+        category,
+        ageGroups: categoryStats.map(stat => ({
+          ageGroup: `${stat._id*10}대`,
+          totalSpent: stat.totalSpent,
+          avgSpent: Math.round(stat.avgSpent),
+          count: stat.count,
+          isUserAge: stat._id === userAge
+        }))
+      });
+    }
+    
+    // 해당 연령대와 전체 평균 소비 차이 계산
+    const userStats = userAgeGroupStats.length > 0 ? {
+      totalSpent: userAgeGroupStats[0].totalSpent,
+      avgSpent: Math.round(userAgeGroupStats[0].avgSpent),
+      count: userAgeGroupStats[0].count
+    } : {
+      totalSpent: 0,
+      avgSpent: 0,
+      count: 0
+    };
+    
+    const overallAvg = overallStats.length > 0 ? Math.round(overallStats[0].avgSpent) : 0;
+    const spendingDifference = userStats.avgSpent - overallAvg;
+    const percentageDifference = overallAvg > 0 ? 
+      Math.round((spendingDifference / overallAvg) * 100) : 0;
+    
+    logToFile(`동년배 비교 데이터 조회 완료`);
+    
+    res.json({
+      success: true,
+      data: {
+        userAgeGroup: {
+          ageGroup: `${userAge*10}대`,
+          stats: userStats,
+          topCategories: userAgeGroupCategoryStats.map(cat => ({
+            category: cat._id,
+            totalSpent: cat.totalSpent,
+            avgSpent: Math.round(cat.avgSpent),
+            count: cat.count
+          }))
+        },
+        otherAgeGroups: otherAgeGroupsStats,
+        oppositeSexComparison: oppositeSexStats,
+        overallAverage: overallAvg,
+        comparison: {
+          difference: spendingDifference,
+          percentageDifference,
+          interpretation: percentageDifference > 0 ? 
+            `${userAge*10}대는 전체 평균보다 ${percentageDifference}% 더 많이 소비합니다.` :
+            `${userAge*10}대는 전체 평균보다 ${Math.abs(percentageDifference)}% 더 적게 소비합니다.`
+        },
+        categoriesComparison
+      }
+    });
+  } catch (error) {
+    logToFile(`동년배 비교 데이터 조회 오류: ${error.message}`, 'ERROR');
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};
+
+module.exports = {
+  addSpending,
+  getSpendingList,
+  getSpendingById,
+  updateSpending,
+  deleteSpending,
+  getGenderStats,
+  getAgeStats,
+  getCategoryStats,
+  getDashboardStats,
+  getMonthlyStats,
+  getPeerComparison
+};

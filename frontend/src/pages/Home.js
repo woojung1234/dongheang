@@ -21,6 +21,17 @@ const Home = () => {
   // 색상 설정
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
+  // 안전한 숫자 포맷팅 함수
+  const safeFormat = (value) => {
+    try {
+      if (value === undefined || value === null) return '0';
+      return Number(value).toLocaleString();
+    } catch (error) {
+      console.error('숫자 포맷팅 오류:', error);
+      return '0';
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -28,15 +39,17 @@ const Home = () => {
         
         // 월별 소비 통계 데이터 가져오기
         const monthlyResponse = await getMonthlyStats(currentYear, currentMonth);
+        console.log('월별 통계 응답:', monthlyResponse);
         
-        if (monthlyResponse.success && monthlyResponse.data) {
+        if (monthlyResponse?.success && monthlyResponse?.data) {
           setMonthlyStats(monthlyResponse.data);
         }
         
         // 동년배 비교 데이터 가져오기
         const comparisonResponse = await getComparisonStats(currentYear, currentMonth);
+        console.log('동년배 비교 응답:', comparisonResponse);
         
-        if (comparisonResponse.success && comparisonResponse.data) {
+        if (comparisonResponse?.success && comparisonResponse?.data) {
           setSpendingData(comparisonResponse.data);
         }
         
@@ -47,19 +60,19 @@ const Home = () => {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, [currentYear, currentMonth]);
 
   // 소비 경고 알림 컴포넌트
   const SpendingAlert = () => {
-    if (!spendingData || !spendingData.categoryComparison || !alertVisible) return null;
+    if (!spendingData || !Array.isArray(spendingData.categoryComparison) || !alertVisible) return null;
     
     // 평균의 80% 이상 사용 중인 카테고리 찾기
     const overBudgetCategories = spendingData.categoryComparison
-      .filter(item => (item.userAmount / item.peerAmount) > 0.8)
+      .filter(item => item && item.peerAmount && item.userAmount && (item.userAmount / item.peerAmount) > 0.8)
       .map(item => ({
-        category: item.category,
+        category: item.category || '기타',
         percent: Math.round((item.userAmount / item.peerAmount) * 100)
       }));
     
@@ -101,34 +114,39 @@ const Home = () => {
 
   // 카테고리별 지출 차트 데이터 준비
   const prepareCategoryData = () => {
-    if (!monthlyStats || !monthlyStats.categorySummary) return [];
+    if (!monthlyStats || !Array.isArray(monthlyStats.categorySummary)) return [];
     
     return monthlyStats.categorySummary.map(item => ({
-      name: item.category,
-      value: item.total,
-      percentage: item.percentage
+      name: item?.category || '기타',
+      value: item?.total || 0,
+      percentage: item?.percentage || 0
     }));
   };
 
   // 일별 지출 차트 데이터 준비
   const prepareDailyData = () => {
-    if (!monthlyStats || !monthlyStats.dailySummary) return [];
+    if (!monthlyStats || !Array.isArray(monthlyStats.dailySummary)) return [];
     
     return monthlyStats.dailySummary.map(item => ({
-      날짜: item.day,
-      지출: item.total
+      날짜: item?.day || 0,
+      지출: item?.total || 0
     }));
   };
 
   // 사용자 지정 툴팁
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="custom-tooltip" style={{ backgroundColor: '#fff', padding: '10px', border: '1px solid #ccc' }}>
-          <p className="label">{`${payload[0].name}: ${payload[0].value.toLocaleString()}원`}</p>
-          <p className="percentage">{`${payload[0].payload.percentage || 0}%`}</p>
-        </div>
-      );
+      try {
+        return (
+          <div className="custom-tooltip" style={{ backgroundColor: '#fff', padding: '10px', border: '1px solid #ccc' }}>
+            <p className="label">{`${payload[0]?.name || '기타'}: ${safeFormat(payload[0]?.value)}원`}</p>
+            <p className="percentage">{`${payload[0]?.payload?.percentage || 0}%`}</p>
+          </div>
+        );
+      } catch (error) {
+        console.error('툴팁 렌더링 오류:', error);
+        return null;
+      }
     }
     return null;
   };
@@ -158,17 +176,19 @@ const Home = () => {
                   <div className="text-danger">{error}</div>
                 ) : monthlyStats ? (
                   <div>
-                    <h3 className="mb-3">{monthlyStats.year}년 {monthlyStats.month}월</h3>
-                    <p><strong>총 지출:</strong> {monthlyStats.totalSpending.toLocaleString()}원</p>
+                    <h3 className="mb-3">{monthlyStats.year || currentYear}년 {monthlyStats.month || currentMonth}월</h3>
+                    <p><strong>총 지출:</strong> {safeFormat(monthlyStats.totalSpending)}원</p>
                     
-                    {spendingData && (
+                    {spendingData && spendingData.peerAverage !== undefined && (
                       <>
-                        <p><strong>동년배 평균:</strong> {spendingData.peerAverage.toLocaleString()}원</p>
-                        <p className={monthlyStats.totalSpending > spendingData.peerAverage ? 'text-danger' : 'text-success'}>
-                          {monthlyStats.totalSpending > spendingData.peerAverage 
-                            ? `평균보다 ${(monthlyStats.totalSpending - spendingData.peerAverage).toLocaleString()}원 더 지출` 
-                            : `평균보다 ${(spendingData.peerAverage - monthlyStats.totalSpending).toLocaleString()}원 적게 지출`}
-                        </p>
+                        <p><strong>동년배 평균:</strong> {safeFormat(spendingData.peerAverage)}원</p>
+                        {monthlyStats.totalSpending !== undefined && spendingData.peerAverage !== undefined && (
+                          <p className={Number(monthlyStats.totalSpending) > Number(spendingData.peerAverage) ? 'text-danger' : 'text-success'}>
+                            {Number(monthlyStats.totalSpending) > Number(spendingData.peerAverage) 
+                              ? `평균보다 ${safeFormat(Number(monthlyStats.totalSpending) - Number(spendingData.peerAverage))}원 더 지출` 
+                              : `평균보다 ${safeFormat(Number(spendingData.peerAverage) - Number(monthlyStats.totalSpending))}원 적게 지출`}
+                          </p>
+                        )}
                       </>
                     )}
                     
@@ -180,7 +200,7 @@ const Home = () => {
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={({ name, percentage }) => `${name}: ${percentage}%`}
+                            label={({ name, percentage }) => `${name || '기타'}: ${percentage || 0}%`}
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="value"
@@ -227,7 +247,7 @@ const Home = () => {
         </Row>
 
         {/* 소비 트렌드 */}
-        {!loading && monthlyStats && (
+        {!loading && monthlyStats && monthlyStats.dailySummary && monthlyStats.dailySummary.length > 0 && (
           <Card className="mb-4">
             <Card.Header>
               <h5 className="mb-0">최근 소비 트렌드</h5>
@@ -242,7 +262,7 @@ const Home = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="날짜" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [`${value.toLocaleString()}원`, '지출']} />
+                    <Tooltip formatter={(value) => [safeFormat(value) + '원', '지출']} />
                     <Legend />
                     <Bar dataKey="지출" fill="#8884d8" />
                   </BarChart>

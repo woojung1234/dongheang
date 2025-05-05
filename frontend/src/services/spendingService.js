@@ -58,9 +58,7 @@ export const deleteSpending = async (id) => {
 // 월별 소비 통계
 export const getMonthlyStats = async (year, month) => {
   try {
-    // '/api/api/spendi' 로 시작하는 잘못된 경로로 요청이 가고 있음
-    // 올바른 경로로 수정
-    const response = await api.get('/spending/stats/monthly', {
+    const response = await api.get('/api/spending/stats/monthly', {
       params: { year, month }
     });
     return response.data;
@@ -73,9 +71,14 @@ export const getMonthlyStats = async (year, month) => {
 // 동년배 비교 통계
 export const getComparisonStats = async (year, month) => {
   try {
-    const response = await api.get('/spending/stats/comparison', {
-      params: { year, month }
+    const response = await api.get('/api/spending/comparison', {
+      params: { 
+        year, 
+        month, 
+        age: 5  // 연령대 정보 필수 (5는 50대를 의미)
+      }
     });
+    console.log('API 응답 데이터:', response.data);
     return response.data;
   } catch (error) {
     console.error('동년배 비교 통계 조회 오류:', error);

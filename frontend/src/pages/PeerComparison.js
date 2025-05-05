@@ -19,6 +19,13 @@ const PeerComparison = () => {
   const currentDate = new Date();
   const [year, setYear] = useState(currentDate.getFullYear());
   const [month, setMonth] = useState(currentDate.getMonth() + 1);
+  
+  // 연도 옵션 생성
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 5 }, (_, i) => ({
+    value: currentYear - i,
+    label: `${currentYear - i}년`
+  }));
 
   // 색상 설정
   const COLORS = {
@@ -32,6 +39,17 @@ const PeerComparison = () => {
   };
 
   const DEFAULT_COLORS = Object.values(COLORS);
+  
+  // 안전한 숫자 포맷팅 함수
+  const safeFormat = (value) => {
+    try {
+      if (value === undefined || value === null) return '0';
+      return Number(value).toLocaleString();
+    } catch (error) {
+      console.error('숫자 포맷팅 오류:', error);
+      return '0';
+    }
+  };
   
   // 데이터 로딩
   useEffect(() => {
@@ -47,17 +65,19 @@ const PeerComparison = () => {
         setComparisonData(response.data);
         
         // 예산 초과 카테고리 확인 (80% 이상)
-        const overBudget = response.data.categoryComparison
-          .filter(item => (item.userAmount / item.peerAmount) > 0.8)
-          .map(item => ({
-            category: item.category,
-            percent: Math.round((item.userAmount / item.peerAmount) * 100),
-            userAmount: item.userAmount,
-            peerAmount: item.peerAmount
-          }));
-        
-        setOverBudgetCategories(overBudget);
-        setAlertShown(overBudget.length > 0);
+        if (Array.isArray(response.data.categoryComparison)) {
+          const overBudget = response.data.categoryComparison
+            .filter(item => item && item.peerAmount && item.userAmount && (item.userAmount / item.peerAmount) > 0.8)
+            .map(item => ({
+              category: item.category || '기타',
+              percent: Math.round((item.userAmount / item.peerAmount) * 100),
+              userAmount: item.userAmount || 0,
+              peerAmount: item.peerAmount || 0
+            }));
+          
+          setOverBudgetCategories(overBudget);
+          setAlertShown(overBudget.length > 0);
+        }
       } else {
         setError('데이터 형식이 올바르지 않습니다.');
       }
@@ -87,14 +107,14 @@ const PeerComparison = () => {
 
   // 차트 데이터 포맷팅
   const prepareCategoryComparisonData = () => {
-    if (!comparisonData || !comparisonData.categoryComparison) return [];
+    if (!comparisonData || !Array.isArray(comparisonData.categoryComparison)) return [];
     
     return comparisonData.categoryComparison.map(item => ({
-      category: item.category,
-      사용자: item.userAmount,
-      동년배평균: item.peerAmount,
+      category: item?.category || '기타',
+      사용자: item?.userAmount || 0,
+      동년배평균: item?.peerAmount || 0,
       // 비율 계산 (사용자가 평균 대비 몇 % 사용하는지)
-      percent: item.peerAmount > 0 
+      percent: item?.peerAmount > 0 
         ? Math.round((item.userAmount / item.peerAmount) * 100)
         : 0
     }));
@@ -105,19 +125,19 @@ const PeerComparison = () => {
     if (!comparisonData) return [];
     
     return [
-      { name: '사용자', value: comparisonData.userSpending },
-      { name: '동년배평균', value: comparisonData.peerAverage }
+      { name: '사용자', value: comparisonData?.userSpending || 0 },
+      { name: '동년배평균', value: comparisonData?.peerAverage || 0 }
     ];
   };
 
   // 레이더 차트 데이터
   const prepareRadarData = () => {
-    if (!comparisonData || !comparisonData.categoryComparison) return [];
+    if (!comparisonData || !Array.isArray(comparisonData.categoryComparison)) return [];
     
     return comparisonData.categoryComparison.map(item => ({
-      subject: item.category,
-      사용자: item.userAmount > 0 ? Math.log10(item.userAmount) : 0,
-      동년배평균: item.peerAmount > 0 ? Math.log10(item.peerAmount) : 0,
+      subject: item?.category || '기타',
+      사용자: item?.userAmount > 0 ? Math.log10(item.userAmount) : 0,
+      동년배평균: item?.peerAmount > 0 ? Math.log10(item.peerAmount) : 0,
       fullMark: 6
     }));
   };
@@ -138,32 +158,33 @@ const PeerComparison = () => {
     { value: 12, label: '12월' }
   ];
 
-  // 연도 옵션 (최근 3년)
-  const yearOptions = [];
-  for (let i = currentDate.getFullYear() - 2; i <= currentDate.getFullYear(); i++) {
-    yearOptions.push({ value: i, label: `${i}년` });
-  }
 
   // 툴팁 사용자 지정
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="custom-tooltip" style={{ backgroundColor: '#fff', padding: '10px', border: '1px solid #ccc' }}>
-          <p className="label">{`${label}`}</p>
-          {payload.map((entry, index) => (
-            <p key={`item-${index}`} style={{ color: entry.color }}>
-              {`${entry.name}: ${entry.value.toLocaleString()}원`}
-            </p>
-          ))}
-          {payload.length > 1 && payload[0].payload.percent && (
-            <p>
-              {payload[0].payload.percent > 100 
-                ? `평균 대비 ${payload[0].payload.percent - 100}% 더 지출` 
-                : `평균 대비 ${100 - payload[0].payload.percent}% 적게 지출`}
-            </p>
-          )}
-        </div>
-      );
+      try {
+        return (
+          <div className="custom-tooltip" style={{ backgroundColor: '#fff', padding: '10px', border: '1px solid #ccc' }}>
+            <p className="label">{`${label}`}</p>
+            {payload.map((entry, index) => (
+              <p key={`item-${index}`} style={{ color: entry.color }}>
+                {`${entry.name}: ${safeFormat(entry.value)}원`}
+              </p>
+            ))}
+            {payload.length > 1 && payload[0].payload?.percent && (
+              <p>
+                {payload[0].payload.percent > 100 
+                  ? `평균 대비 ${payload[0].payload.percent - 100}% 더 지출` 
+                  : `평균 대비 ${100 - payload[0].payload.percent}% 적게 지출`}
+              </p>
+            )}
+          </div>
+        );
+      } catch (error) {
+        console.error('툴팁 오류:', error);
+        return null;
+      }
+      
     }
     return null;
   };
@@ -182,7 +203,7 @@ const PeerComparison = () => {
           <>
             <strong>{category.category}</strong> 카테고리에서 동년배 평균의 {category.percent}%를 사용 중입니다.
             <span className="ms-2">
-              (사용자: {category.userAmount.toLocaleString()}원, 평균: {category.peerAmount.toLocaleString()}원)
+              (사용자: {safeFormat(category.userAmount)}원, 평균: {safeFormat(category.peerAmount)}원)
             </span>
           </>
         );
@@ -195,7 +216,7 @@ const PeerComparison = () => {
                 <li key={index}>
                   <strong>{category.category}</strong>: 평균의 {category.percent}%
                   <span className="ms-2">
-                    (사용자: {category.userAmount.toLocaleString()}원, 평균: {category.peerAmount.toLocaleString()}원)
+                    (사용자: {safeFormat(category.userAmount)}원, 평균: {safeFormat(category.peerAmount)}원)
                   </span>
                 </li>
               ))}
@@ -305,16 +326,18 @@ const PeerComparison = () => {
                   <Col md={6}>
                     <div className="text-center mb-3">
                       <h4>
-                        사용자: {comparisonData.userSpending.toLocaleString()}원
+                        사용자: {safeFormat(comparisonData.userSpending)}원
                       </h4>
                       <h4>
-                        동년배 평균: {comparisonData.peerAverage.toLocaleString()}원
+                        동년배 평균: {safeFormat(comparisonData.peerAverage)}원
                       </h4>
-                      <h5 className={comparisonData.userSpending > comparisonData.peerAverage ? 'text-danger' : 'text-success'}>
-                        {comparisonData.userSpending > comparisonData.peerAverage 
-                          ? `평균보다 ${(comparisonData.userSpending - comparisonData.peerAverage).toLocaleString()}원 더 지출` 
-                          : `평균보다 ${(comparisonData.peerAverage - comparisonData.userSpending).toLocaleString()}원 적게 지출`}
-                      </h5>
+                      {comparisonData.userSpending !== undefined && comparisonData.peerAverage !== undefined && (
+                        <h5 className={Number(comparisonData.userSpending) > Number(comparisonData.peerAverage) ? 'text-danger' : 'text-success'}>
+                          {Number(comparisonData.userSpending) > Number(comparisonData.peerAverage) 
+                            ? `평균보다 ${safeFormat(Number(comparisonData.userSpending) - Number(comparisonData.peerAverage))}원 더 지출` 
+                            : `평균보다 ${safeFormat(Number(comparisonData.peerAverage) - Number(comparisonData.userSpending))}원 적게 지출`}
+                        </h5>
+                      )}
                     </div>
                   </Col>
                   <Col md={6}>
@@ -325,7 +348,7 @@ const PeerComparison = () => {
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
                           outerRadius={100}
                           fill="#8884d8"
                           dataKey="value"
@@ -334,7 +357,7 @@ const PeerComparison = () => {
                             <Cell key={`cell-${index}`} fill={DEFAULT_COLORS[index % DEFAULT_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value) => value.toLocaleString() + '원'} />
+                        <Tooltip formatter={(value) => safeFormat(value) + '원'} />
                         <Legend />
                       </PieChart>
                     </ResponsiveContainer>
@@ -398,8 +421,8 @@ const PeerComparison = () => {
                   <h5 className="mb-0">사용자 정보</h5>
                 </Card.Header>
                 <Card.Body>
-                  <p><strong>연령대:</strong> {comparisonData.userInfo.ageGroup}</p>
-                  <p><strong>성별:</strong> {comparisonData.userInfo.gender === 'male' ? '남성' : '여성'}</p>
+                  <p><strong>연령대:</strong> {comparisonData.userInfo?.ageGroup || '-'}</p>
+                  <p><strong>성별:</strong> {comparisonData.userInfo?.gender === 'male' ? '남성' : comparisonData.userInfo?.gender === 'female' ? '여성' : '-'}</p>
                   <p className="text-muted">
                     * 동년배 비교는 사용자와 같은 연령대, 같은 성별의 평균 소비 데이터를 기반으로 합니다.
                   </p>
@@ -423,5 +446,3 @@ const PeerComparison = () => {
 };
 
 export default PeerComparison;
-
-        

@@ -50,12 +50,12 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/consumption" element={<ConsumptionHistory />} />
-            <Route path="/welfare" element={<WelfareServices />} />
-            <Route path="/report" element={<SpendingReport />} />
-            <Route path="/comparison" element={<PeerComparison />} />
-            <Route path="/prediction" element={<SpendingPrediction />} />
-            <Route path="/budget" element={<BudgetRecommendation />} />
+            <Route path="/consumption-history" element={<ConsumptionHistory />} />
+            <Route path="/welfare-services" element={<WelfareServices />} />
+            <Route path="/spending-report" element={<SpendingReport />} />
+            <Route path="/peer-comparison" element={<PeerComparison />} />
+            <Route path="/spending-prediction" element={<SpendingPrediction />} />
+            <Route path="/budget-recommendation" element={<BudgetRecommendation />} />
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
