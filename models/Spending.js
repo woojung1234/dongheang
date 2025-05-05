@@ -19,6 +19,14 @@ const SpendingSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  ta_ymd: {  // 거래 일자 필드 추가
+    type: String,
+    required: false  // 기존 데이터 호환을 위해 false로 설정
+  },
+  description: {
+    type: String,
+    required: false
+  },
   // 검색 및 필터링을 위한 추가 필드
   createdAt: {
     type: Date,

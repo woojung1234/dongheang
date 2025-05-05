@@ -1,9 +1,22 @@
 import axios from 'axios';
 
+// 환경에 따른 baseURL 설정
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'production') {
+    return ''; // 프로덕션 환경에서는 상대 경로 사용
+  }
+  
+  // Docker 환경인 경우
+  if (window.location.hostname === 'localhost' && window.location.port === '3000') {
+    return 'http://localhost:5000';
+  }
+  
+  return ''; // 기본값은 상대 경로
+};
+
 // axios 인스턴스 생성
 const api = axios.create({
-  // 서버의 실제 URL로 변경 (5000이 포트임을 확인했으니 유지)
-  baseURL: 'http://localhost:5000',
+  baseURL: getBaseUrl(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -21,6 +34,7 @@ api.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     
+    console.log('API 요청:', config.method, config.url, config.params || config.data);
     return config;
   },
   (error) => {
@@ -32,11 +46,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // 성공적인 응답 처리
+    console.log('API 응답 성공:', response.config.url, response.status);
     return response;
   },
   (error) => {
     // 오류 응답 처리
-    console.error('API 오류:', error);
+    console.error('API 오류:', error.config?.url, error.response?.status, error.message);
     
     // 토큰 만료 (401) 처리
     if (error.response && error.response.status === 401) {
