@@ -70,14 +70,14 @@ export const getMonthlyStats = async (year, month) => {
 };
 
 // 동년배 비교 통계
-export const getComparisonStats = async (year, month) => {
+export const getComparisonStats = async (year, month, age = 5) => {
   try {
-    console.log(`동년배 비교 요청: ${year}년 ${month}월`);
+    console.log(`동년배 비교 요청: ${year}년 ${month}월, 연령대: ${age}0대`);
     const response = await api.get('/api/spending/comparison', {
       params: { 
         year, 
         month, 
-        age: 5  // 연령대 정보 필수 (5는 50대를 의미)
+        age
       }
     });
     console.log('API 응답 데이터:', response.data);

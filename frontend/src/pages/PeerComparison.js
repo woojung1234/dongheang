@@ -20,6 +20,8 @@ const PeerComparison = () => {
   const currentDate = new Date();
   const [year, setYear] = useState(currentDate.getFullYear());
   const [month, setMonth] = useState(currentDate.getMonth() + 1);
+  // 연령대 상태 추가
+  const [ageGroup, setAgeGroup] = useState(5); // 기본값 5 (50대)
   
   // 연도 옵션 생성
   const currentYear = new Date().getFullYear();
@@ -27,6 +29,15 @@ const PeerComparison = () => {
     value: currentYear - i,
     label: `${currentYear - i}년`
   }));
+
+  // 연령대 옵션 추가
+  const ageGroupOptions = [
+    { value: 5, label: '50대' },
+    { value: 6, label: '60대' },
+    { value: 7, label: '70대' },
+    { value: 8, label: '80대' },
+    { value: 9, label: '90대' }
+  ];
 
   // 색상 설정
   const COLORS = {
@@ -60,7 +71,7 @@ const PeerComparison = () => {
   const fetchComparisonData = async () => {
     try {
       setLoading(true);
-      const response = await getComparisonStats(year, month);
+      const response = await getComparisonStats(year, month, ageGroup);
       
       if (response && response.success && response.data) {
         setComparisonData(response.data);
@@ -99,6 +110,11 @@ const PeerComparison = () => {
   // 월 선택 핸들러
   const handleMonthChange = (e) => {
     setMonth(parseInt(e.target.value));
+  };
+
+  // 연령대 선택 핸들러
+  const handleAgeGroupChange = (e) => {
+    setAgeGroup(parseInt(e.target.value));
   };
 
   // 검색 핸들러
@@ -143,17 +159,7 @@ const PeerComparison = () => {
     }));
   };
 
-  // 일별 비교 차트 데이터
-  const prepareDailyComparisonData = () => {
-    if (!comparisonData || !Array.isArray(comparisonData.dailyComparison)) return [];
-    
-    return comparisonData.dailyComparison.map(item => ({
-      day: item.day,
-      사용자: item.userAmount || 0,
-      동년배평균: item.peerAmount || 0
-    }));
-  };
-
+  
   // 월 선택 옵션
   const monthOptions = [
     { value: 1, label: '1월' },
@@ -282,7 +288,7 @@ const PeerComparison = () => {
         <Card className="mb-4">
           <Card.Body>
             <Row className="align-items-end">
-              <Col md={4}>
+              <Col md={3}>
                 <Form.Group>
                   <Form.Label>연도</Form.Label>
                   <Form.Select value={year} onChange={handleYearChange}>
@@ -292,7 +298,7 @@ const PeerComparison = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col md={4}>
+              <Col md={3}>
                 <Form.Group>
                   <Form.Label>월</Form.Label>
                   <Form.Select value={month} onChange={handleMonthChange}>
@@ -302,7 +308,17 @@ const PeerComparison = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col md={4}>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>연령대</Form.Label>
+                  <Form.Select value={ageGroup} onChange={handleAgeGroupChange}>
+                    {ageGroupOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
                 <Button 
                   variant="primary" 
                   onClick={handleSearch} 
@@ -401,29 +417,6 @@ const PeerComparison = () => {
               </Card.Body>
             </Card>
 
-            {/* 일별 비교 차트 */}
-            <Card className="mb-4">
-              <Card.Header>
-                <h5 className="mb-0">일별 소비 비교</h5>
-              </Card.Header>
-              <Card.Body>
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart
-                    data={prepareDailyComparisonData()}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Line type="monotone" dataKey="사용자" stroke="#8884d8" />
-                    <Line type="monotone" dataKey="동년배평균" stroke="#82ca9d" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card.Body>
-            </Card>
-
             {/* 레이더 차트 */}
             <Card className="mb-4">
               <Card.Header>
@@ -438,7 +431,7 @@ const PeerComparison = () => {
                     <Radar name="사용자" dataKey="사용자" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                     <Radar name="동년배평균" dataKey="동년배평균" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
                     <Legend />
-                    <Tooltip />
+                    
                   </RadarChart>
                 </ResponsiveContainer>
                 <div className="text-center mt-3">

@@ -746,147 +746,85 @@ const getPeerComparison = async (req, res) => {
     
     const userAge = parseInt(age); // 5는 50대, 6은 60대, ...
     
-    // 해당 월의 시작일과 종료일 계산
-    const monthStr = month.toString().padStart(2, '0');
-    const startDate = `${year}${monthStr}01`;
-    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-    const endDate = `${year}${monthStr}${lastDay.toString().padStart(2, '0')}`;
-    
-    logToFile(`조회 기간: ${startDate} ~ ${endDate}`);
-    
-    // 연령대 필터
+    // 연령대 필터 구성
     const ageFilter = {
       age: userAge
     };
     
-    // 날짜 필터 (데이터가 있는 경우만)
-    let dateFilter = {};
+    // 해당 연령대 데이터 조회
+    const spendingData = await Spending.find(ageFilter);
     
-    try {
-      // ta_ymd 필드가 있는 데이터가 있는지 확인
-      const hasData = await Spending.findOne({ ta_ymd: { $exists: true } });
-      
-      if (hasData) {
-        dateFilter = {
-          ta_ymd: { $gte: startDate, $lte: endDate }
-        };
-      } else {
-        logToFile('ta_ymd 필드가 없는 데이터를 사용합니다.', 'WARNING');
-      }
-    } catch (checkError) {
-      logToFile(`데이터 확인 중 오류: ${checkError.message}`, 'ERROR');
-    }
+    logToFile(`${userAge}(${userAge * 10}대) 데이터 수: ${spendingData.length}`);
     
-    // 최종 쿼리 필터
-    const filter = { ...ageFilter };
-    if (Object.keys(dateFilter).length > 0) {
-      Object.assign(filter, dateFilter);
-    }
-    
-    logToFile(`MongoDB 쿼리 필터: ${JSON.stringify(filter)}`);
-    
-    // 기본 카테고리 데이터
-    const defaultCategories = ['식비', '교통', '주거', '의료', '문화', '의류', '기타'];
-    let categoryData = {};
-    
-    try {
-      // 동년배 총 지출 및 카테고리별 지출 집계
-      const spendingData = await Spending.find(filter);
-      
-      logToFile(`조회된 데이터 수: ${spendingData.length}`);
-      
-      if (spendingData.length > 0) {
-        // 카테고리별 데이터 집계
-        spendingData.forEach(item => {
-          const category = item.card_tpbuz_nm_1 || '기타';
-          
-          if (!categoryData[category]) {
-            categoryData[category] = {
-              totalAmount: 0,
-              count: 0
-            };
-          }
-          
-          categoryData[category].totalAmount += item.total_spent;
-          categoryData[category].count += 1;
-        });
-      } else {
-        // 테스트 데이터 생성 (실제 데이터가 없는 경우)
-        logToFile('실제 데이터가 없습니다. 샘플 데이터를 생성합니다.', 'WARNING');
+    if (spendingData.length > 0) {
+      // 카테고리별 데이터 집계
+      let categoryData = {};
+      spendingData.forEach(item => {
+        const category = item.card_tpbuz_nm_1 || '기타';
         
-        defaultCategories.forEach((category, index) => {
+        if (!categoryData[category]) {
           categoryData[category] = {
-            totalAmount: 10000 * (index + 1) * Math.random() * 10,
-            count: 5 + Math.floor(Math.random() * 10)
+            totalAmount: 0,
+            count: 0
           };
-        });
-      }
-    } catch (dbError) {
-      logToFile(`데이터베이스 조회 오류: ${dbError.message}`, 'ERROR');
-      
-      // 오류 발생 시 샘플 데이터로 대체
-      defaultCategories.forEach((category, index) => {
-        categoryData[category] = {
-          totalAmount: 10000 * (index + 1) * Math.random() * 10,
-          count: 5 + Math.floor(Math.random() * 10)
-        };
-      });
-    }
-    
-    // 상위 5개 카테고리 선택
-    const topCategories = Object.keys(categoryData)
-      .sort((a, b) => categoryData[b].totalAmount - categoryData[a].totalAmount)
-      .slice(0, 5);
-    
-    // 카테고리별 비교 데이터
-    const categoryComparison = topCategories.map(category => ({
-      category,
-      peerAmount: Math.round(categoryData[category].totalAmount),
-      userAmount: 0 // 사용자 데이터 없음
-    }));
-    
-    // 월별 총 소비 계산
-    const peerTotal = Object.values(categoryData)
-      .reduce((sum, data) => sum + data.totalAmount, 0);
-    
-    // 일별 데이터 (예시 데이터 생성)
-    const dailyData = [];
-    for (let day = 1; day <= lastDay; day++) {
-      // 평일/주말에 따라 다른 값 생성
-      const dayOfWeek = new Date(parseInt(year), parseInt(month) - 1, day).getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-      
-      // 주말에는 더 많은 소비
-      const multiplier = isWeekend ? 1.5 : 1.0;
-      
-      dailyData.push({
-        day,
-        peerAmount: Math.round(peerTotal / lastDay * multiplier * (0.8 + Math.random() * 0.4)),
-        userAmount: 0 // 사용자 데이터 없음
-      });
-    }
-    
-    logToFile(`동년배 비교 데이터 생성 완료: 카테고리 ${categoryComparison.length}개, 일별 데이터 ${dailyData.length}개`);
-    
-    res.json({
-      success: true,
-      data: {
-        userSpending: 0, // 사용자 데이터 없음
-        peerAverage: Math.round(peerTotal),
-        categoryComparison,
-        dailyComparison: dailyData,
-        userInfo: {
-          ageGroup: `${userAge * 10}대`,
-          gender: 'male' // 예시 값
         }
-      }
-    });
+        
+        categoryData[category].totalAmount += item.total_spent;
+        categoryData[category].count += 1;
+      });
+      
+      // 상위 5개 카테고리 선택
+      const topCategories = Object.keys(categoryData)
+        .sort((a, b) => categoryData[b].totalAmount - categoryData[a].totalAmount)
+        .slice(0, 5);
+      
+      // 카테고리별 평균 계산
+      const categoryComparison = topCategories.map(category => ({
+        category,
+        peerAmount: Math.round(categoryData[category].totalAmount / categoryData[category].count),
+        userAmount: 0 // 사용자 데이터 없음
+      }));
+      
+      // 총 소비 계산 (카테고리별 평균의 합)
+      const peerAverage = categoryComparison.reduce((sum, item) => sum + item.peerAmount, 0);
+      
+      logToFile(`동년배 비교 데이터 생성 완료: 카테고리 ${categoryComparison.length}개`);
+      
+      res.json({
+        success: true,
+        data: {
+          userSpending: 0, // 사용자 데이터 없음
+          peerAverage: peerAverage, // 카테고리별 평균의 합
+          categoryComparison,
+          userInfo: {
+            ageGroup: `${userAge * 10}대`,
+            gender: 'male'
+          }
+        }
+      });
+    } else {
+      // 데이터가 없는 경우
+      logToFile(`선택한 연령대(${userAge * 10}대)의 데이터가 없습니다.`, 'WARNING');
+      
+      res.json({
+        success: true,
+        message: `선택한 연령대(${userAge * 10}대)의 데이터가 존재하지 않습니다.`,
+        data: {
+          userSpending: 0,
+          peerAverage: 0,
+          categoryComparison: [],
+          userInfo: {
+            ageGroup: `${userAge * 10}대`,
+            gender: 'male'
+          }
+        }
+      });
+    }
   } catch (error) {
     logToFile(`동년배 비교 데이터 조회 오류: ${error.message}`, 'ERROR');
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 };
-
 module.exports = {
   addSpending,
   getSpendingList,
