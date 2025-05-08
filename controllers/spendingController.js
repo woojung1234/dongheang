@@ -746,6 +746,19 @@ const getPeerComparison = async (req, res) => {
     
     const userAge = parseInt(age); // 5는 50대, 6은 60대, ...
     
+    // 카테고리 매핑 추가 - 실제 카테고리를 기존 카테고리로 변환
+    const categoryMapping = {
+      '음식': '식비',            // 음식 -> 식비
+      '의료/건강': '의료',       // 의료/건강 -> 의료
+      '공연/전시': '문화',       // 공연/전시 -> 문화
+      '소매/유통': '의류',       // 소매/유통 -> 의류 (가장 가까운 카테고리로 매핑)
+      '생활서비스': '주거',      // 생활서비스 -> 주거 (가장 가까운 카테고리로 매핑)
+      '미디어/통신': '교통',     // 미디어/통신 -> 교통 (가장 가까운 카테고리로 매핑)
+      '여가/오락': '문화',       // 여가/오락 -> 문화 (비슷한 성격의 카테고리로 매핑)
+      '학문/교육': '기타',       // 학문/교육 -> 기타
+      '공공/기업/단체': '기타'   // 공공/기업/단체 -> 기타
+    };
+    
     // 연령대 필터 구성
     const ageFilter = {
       age: userAge
@@ -757,29 +770,32 @@ const getPeerComparison = async (req, res) => {
     logToFile(`${userAge}(${userAge * 10}대) 데이터 수: ${spendingData.length}`);
     
     if (spendingData.length > 0) {
-      // 카테고리별 데이터 집계
-      let categoryData = {};
+      // 카테고리별 데이터 집계 (매핑 적용)
+      let categoryData = {
+        '식비': { totalAmount: 0, count: 0 },
+        '교통': { totalAmount: 0, count: 0 },
+        '주거': { totalAmount: 0, count: 0 },
+        '의료': { totalAmount: 0, count: 0 },
+        '문화': { totalAmount: 0, count: 0 },
+        '의류': { totalAmount: 0, count: 0 },
+        '기타': { totalAmount: 0, count: 0 }
+      };
+      
       spendingData.forEach(item => {
-        const category = item.card_tpbuz_nm_1 || '기타';
-        
-        if (!categoryData[category]) {
-          categoryData[category] = {
-            totalAmount: 0,
-            count: 0
-          };
-        }
+        const originalCategory = item.card_tpbuz_nm_1 || '';
+        // 매핑된 카테고리가 있으면 사용, 없으면 '기타'로 분류
+        const category = categoryMapping[originalCategory] || '기타';
         
         categoryData[category].totalAmount += item.total_spent;
         categoryData[category].count += 1;
       });
       
-      // 상위 5개 카테고리 선택
-      const topCategories = Object.keys(categoryData)
-        .sort((a, b) => categoryData[b].totalAmount - categoryData[a].totalAmount)
-        .slice(0, 5);
+      // 데이터가 있는 카테고리만 필터링
+      const activeCategories = Object.keys(categoryData)
+        .filter(category => categoryData[category].count > 0);
       
       // 카테고리별 평균 계산
-      const categoryComparison = topCategories.map(category => ({
+      const categoryComparison = activeCategories.map(category => ({
         category,
         peerAmount: Math.round(categoryData[category].totalAmount / categoryData[category].count),
         userAmount: 0 // 사용자 데이터 없음
