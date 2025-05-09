@@ -1,0 +1,125 @@
+/* frontend/src/pages/ConsumptionHistory.css */
+
+.consumption-table {
+    font-size: 1rem;
+  }
+  
+  .sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .sortable:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .rotate-180 {
+    transform: rotate(180deg);
+  }
+  
+  .consumption-table td {
+    vertical-align: middle;
+  }
+  
+  .filter-panel {
+    animation: slideDown 0.3s ease;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .summary-item {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+  }
+  
+  .summary-item h3 {
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+  
+  /* 고대비 모드 대응 */
+  @media (prefers-contrast: more) {
+    .summary-item {
+      border-left: 4px solid #000;
+    }
+    
+    .sortable:hover {
+      background-color: #ddd;
+    }
+  }
+  
+  /* 고령자를 위한 큰 글씨 지원 */
+  @media (min-width: 992px) {
+    .consumption-table {
+      font-size: 1.1rem;
+    }
+    
+    .summary-item h3 {
+      font-size: 1.8rem;
+    }
+  }
+  
+  /* 작은 화면에서의 반응형 조정 */
+  @media (max-width: 768px) {
+    .table-responsive {
+      border: none;
+    }
+    
+    .consumption-table thead {
+      display: none;
+    }
+    
+    .consumption-table tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+    }
+    
+    .consumption-table td {
+      display: block;
+      text-align: right;
+      padding: 0.5rem 1rem;
+      position: relative;
+      border-top: none;
+    }
+    
+    .consumption-table td:before {
+      content: attr(data-label);
+      float: left;
+      font-weight: bold;
+    }
+    
+    .consumption-table td:nth-child(1):before {
+      content: "날짜:";
+    }
+    
+    .consumption-table td:nth-child(2):before {
+      content: "카테고리:";
+    }
+    
+    .consumption-table td:nth-child(3):before {
+      content: "금액:";
+    }
+    
+    .consumption-table td:nth-child(4):before {
+      content: "설명:";
+    }
+    
+    .consumption-table td:nth-child(5):before {
+      content: "액션:";
+    }
+    
+    .consumption-table td:nth-child(5) {
+      text-align: center;
+    }
+  }

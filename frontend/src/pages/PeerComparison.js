@@ -1,475 +1,415 @@
+// frontend/src/pages/PeerComparison.js
+
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Alert, Form, Button, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { Container, Card, Button, Row, Col, Form, Spinner, Alert } from 'react-bootstrap';
+import { FaArrowLeft, FaPrint, FaInfoCircle } from 'react-icons/fa';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  LineChart, Line
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
-import { getComparisonStats } from '../services/spendingService';
-import Layout from '../components/Layout';
+import axios from 'axios';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import Header from '../components/Header';
+import './PeerComparison.css';
 
 const PeerComparison = () => {
-  // 상태 관리
-  const [comparisonData, setComparisonData] = useState(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [alertShown, setAlertShown] = useState(false);
-  const [overBudgetCategories, setOverBudgetCategories] = useState([]);
-
-  // 현재 연도와 월 설정
-  const currentDate = new Date();
-  const [year, setYear] = useState(currentDate.getFullYear());
-  const [month, setMonth] = useState(currentDate.getMonth() + 1);
-  // 연령대 상태 추가
-  const [ageGroup, setAgeGroup] = useState(5); // 기본값 5 (50대)
+  const [comparisonData, setComparisonData] = useState(null);
   
-  // 연도 옵션 생성
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 5 }, (_, i) => ({
-    value: currentYear - i,
-    label: `${currentYear - i}년`
-  }));
-
-  // 연령대 옵션 추가
-  const ageGroupOptions = [
-    { value: 5, label: '50대' },
-    { value: 6, label: '60대' },
-    { value: 7, label: '70대' },
-    { value: 8, label: '80대' },
-    { value: 9, label: '90대' }
-  ];
-
-  // 색상 설정
-  const COLORS = {
-    '식비': '#FF8042',
-    '교통': '#0088FE',
-    '주거': '#00C49F',
-    '의료': '#FFBB28',
-    '문화': '#FF0000',
-    '의류': '#8884D8',
-    '기타': '#82CA9D'
-  };
-
-  const DEFAULT_COLORS = Object.values(COLORS);
+  // 필터 상태
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedAge, setSelectedAge] = useState('5'); // 기본값 50대
+  const [selectedGender, setSelectedGender] = useState('M'); // 기본값 남성
   
-  // 안전한 숫자 포맷팅 함수
-  const safeFormat = (value) => {
-    try {
-      if (value === undefined || value === null) return '0';
-      return Number(value).toLocaleString();
-    } catch (error) {
-      console.error('숫자 포맷팅 오류:', error);
-      return '0';
-    }
-  };
-  
-  // 데이터 로딩
   useEffect(() => {
     fetchComparisonData();
-  }, []);
-
+  }, [selectedDate, selectedAge, selectedGender]);
+  
+  // 동년배 비교 데이터 가져오기
   const fetchComparisonData = async () => {
     try {
       setLoading(true);
-      const response = await getComparisonStats(year, month, ageGroup);
+      setError(null);
       
-      if (response && response.success && response.data) {
-        setComparisonData(response.data);
-        
-        // 예산 초과 카테고리 확인 (80% 이상)
-        if (Array.isArray(response.data.categoryComparison)) {
-          const overBudget = response.data.categoryComparison
-            .filter(item => item && item.peerAmount && item.userAmount && (item.userAmount / item.peerAmount) > 0.8)
-            .map(item => ({
-              category: item.category || '기타',
-              percent: Math.round((item.userAmount / item.peerAmount) * 100),
-              userAmount: item.userAmount || 0,
-              peerAmount: item.peerAmount || 0
-            }));
-          
-          setOverBudgetCategories(overBudget);
-          setAlertShown(overBudget.length > 0);
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth() + 1;
+      
+      const response = await axios.get(`/api/spending/comparison`, {
+        params: {
+          year,
+          month,
+          age: selectedAge,
+          gender: selectedGender === 'M' ? 'male' : 'female'
         }
+      });
+      
+      if (response.data.success) {
+        setComparisonData(response.data.data);
       } else {
-        setError('데이터 형식이 올바르지 않습니다.');
+        setError('동년배 비교 데이터를 불러오는데 실패했습니다.');
       }
       
       setLoading(false);
-    } catch (err) {
-      console.error('동년배 비교 데이터 로딩 오류:', err);
-      setError('데이터를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } catch (error) {
+      console.error('동년배 비교 데이터 로딩 오류:', error);
+      setError('동년배 비교 데이터를 불러오는 중 오류가 발생했습니다.');
       setLoading(false);
     }
   };
-
-  // 연도 선택 핸들러
-  const handleYearChange = (e) => {
-    setYear(parseInt(e.target.value));
+  
+  // 날짜 변경 처리
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
   };
-
-  // 월 선택 핸들러
-  const handleMonthChange = (e) => {
-    setMonth(parseInt(e.target.value));
+  
+  // 연령대 변경 처리
+  const handleAgeChange = (e) => {
+    setSelectedAge(e.target.value);
   };
-
-  // 연령대 선택 핸들러
-  const handleAgeGroupChange = (e) => {
-    setAgeGroup(parseInt(e.target.value));
+  
+  // 성별 변경 처리
+  const handleGenderChange = (e) => {
+    setSelectedGender(e.target.value);
   };
-
-  // 검색 핸들러
-  const handleSearch = () => {
-    fetchComparisonData();
+  
+  // 리포트 인쇄
+  const handlePrint = () => {
+    window.print();
   };
-
-  // 차트 데이터 포맷팅
-  const prepareCategoryComparisonData = () => {
-    if (!comparisonData || !Array.isArray(comparisonData.categoryComparison)) return [];
+  
+  // 금액 형식화
+  const formatCurrency = (amount) => {
+    if (amount === undefined || amount === null) return '0';
+    return new Intl.NumberFormat('ko-KR').format(amount);
+  };
+  
+  // 카테고리별 비교 차트
+  const renderCategoryComparisonChart = () => {
+    if (!comparisonData || !comparisonData.categoryComparison) return null;
     
-    return comparisonData.categoryComparison.map(item => ({
-      category: item?.category || '기타',
-      사용자: item?.userAmount || 0,
-      동년배평균: item?.peerAmount || 0,
-      // 비율 계산 (사용자가 평균 대비 몇 % 사용하는지)
-      percent: item?.peerAmount > 0 
-        ? Math.round((item.userAmount / item.peerAmount) * 100)
-        : 0
+    // 데이터 가공
+    const data = comparisonData.categoryComparison.map(item => ({
+      name: item.category,
+      내소비: item.userAmount || 0,
+      동년배평균: item.peerAmount || 0
     }));
-  };
-
-  // 총 지출 비교 데이터
-  const prepareTotalComparisonData = () => {
-    if (!comparisonData) return [];
     
-    return [
-      { name: '사용자', value: comparisonData?.userSpending || 0 },
-      { name: '동년배평균', value: comparisonData?.peerAverage || 0 }
-    ];
-  };
-
-  // 레이더 차트 데이터
-  const prepareRadarData = () => {
-    if (!comparisonData || !Array.isArray(comparisonData.categoryComparison)) return [];
-    
-    return comparisonData.categoryComparison.map(item => ({
-      subject: item?.category || '기타',
-      사용자: item?.userAmount > 0 ? Math.log10(item.userAmount) : 0,
-      동년배평균: item?.peerAmount > 0 ? Math.log10(item.peerAmount) : 0,
-      fullMark: 6
-    }));
-  };
-
-  
-  // 월 선택 옵션
-  const monthOptions = [
-    { value: 1, label: '1월' },
-    { value: 2, label: '2월' },
-    { value: 3, label: '3월' },
-    { value: 4, label: '4월' },
-    { value: 5, label: '5월' },
-    { value: 6, label: '6월' },
-    { value: 7, label: '7월' },
-    { value: 8, label: '8월' },
-    { value: 9, label: '9월' },
-    { value: 10, label: '10월' },
-    { value: 11, label: '11월' },
-    { value: 12, label: '12월' }
-  ];
-
-
-  // 툴팁 사용자 지정
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      try {
-        return (
-          <div className="custom-tooltip" style={{ backgroundColor: '#fff', padding: '10px', border: '1px solid #ccc' }}>
-            <p className="label">{`${label}`}</p>
-            {payload.map((entry, index) => (
-              <p key={`item-${index}`} style={{ color: entry.color }}>
-                {`${entry.name}: ${safeFormat(entry.value)}원`}
-              </p>
-            ))}
-            {payload.length > 1 && payload[0].payload?.percent && (
-              <p>
-                {payload[0].payload.percent > 100 
-                  ? `평균 대비 ${payload[0].payload.percent - 100}% 더 지출` 
-                  : `평균 대비 ${100 - payload[0].payload.percent}% 적게 지출`}
-              </p>
-            )}
-          </div>
-        );
-      } catch (error) {
-        console.error('툴팁 오류:', error);
-        return null;
-      }
-      
-    }
-    return null;
-  };
-
-  // 소비 경고 알림 컴포넌트
-  const SpendingAlertMessage = ({ categories, onClose }) => {
-    if (!categories || categories.length === 0) {
-      return null;
-    }
-  
-    // 경고 메시지 생성
-    const createAlertMessage = () => {
-      if (categories.length === 1) {
-        const category = categories[0];
-        return (
-          <>
-            <strong>{category.category}</strong> 카테고리에서 동년배 평균의 {category.percent}%를 사용 중입니다.
-            <span className="ms-2">
-              (사용자: {safeFormat(category.userAmount)}원, 평균: {safeFormat(category.peerAmount)}원)
-            </span>
-          </>
-        );
-      } else {
-        return (
-          <>
-            <p>다음 카테고리에서 동년배 평균의 80% 이상을 사용 중입니다:</p>
-            <ul>
-              {categories.map((category, index) => (
-                <li key={index}>
-                  <strong>{category.category}</strong>: 평균의 {category.percent}%
-                  <span className="ms-2">
-                    (사용자: {safeFormat(category.userAmount)}원, 평균: {safeFormat(category.peerAmount)}원)
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        );
-      }
-    };
-  
-    // 경고 심각도 결정 (100% 이상이면 danger, 그 이하면 warning)
-    const determineSeverity = () => {
-      const highRiskCategories = categories.filter(cat => cat.percent >= 100);
-      return highRiskCategories.length > 0 ? 'danger' : 'warning';
-    };
-  
     return (
-      <Alert 
-        variant={determineSeverity()} 
-        dismissible 
-        onClose={onClose}
-        className="mb-4"
-      >
-        <Alert.Heading>
-          {determineSeverity() === 'danger' ? '지출 주의 필요!' : '지출 경고'}
-        </Alert.Heading>
-        {createAlertMessage()}
-        <hr />
-        <p className="mb-0">
-          {determineSeverity() === 'danger' 
-            ? '평균을 초과하는 지출 패턴이 발견되었습니다. 지출을 줄이는 것을 고려해보세요.'
-            : '동년배 평균에 근접한 지출 패턴이 발견되었습니다. 지출 추이를 모니터링하세요.'}
-        </p>
-      </Alert>
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">카테고리별 비교</h5>
+        </Card.Header>
+        <Card.Body>
+          <div style={{ height: 350 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={80} />
+                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                <Legend />
+                <Bar dataKey="내소비" fill="#8884d8" />
+                <Bar dataKey="동년배평균" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
     );
   };
-
+  
+  // 레이더 차트
+  const renderRadarChart = () => {
+    if (!comparisonData || !comparisonData.categoryComparison) return null;
+    
+    // 데이터 가공 - 상대적 비율로 계산
+    const maxValues = {};
+    comparisonData.categoryComparison.forEach(item => {
+      const max = Math.max(item.userAmount || 0, item.peerAmount || 0);
+      maxValues[item.category] = max > 0 ? max : 1; // 0으로 나누기 방지
+    });
+    
+    const data = comparisonData.categoryComparison.map(item => ({
+      category: item.category,
+      내소비: item.userAmount > 0 ? (item.userAmount / maxValues[item.category]) * 100 : 0,
+      동년배평균: item.peerAmount > 0 ? (item.peerAmount / maxValues[item.category]) * 100 : 0,
+      실제내소비: item.userAmount || 0,
+      실제동년배평균: item.peerAmount || 0
+    }));
+    
+    return (
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">소비 패턴 비교</h5>
+        </Card.Header>
+        <Card.Body>
+          <div style={{ height: 350 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={data}>
+                <PolarGrid />
+                <PolarAngleAxis dataKey="category" />
+                <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                <Radar name="내소비" dataKey="내소비" stroke="#8884d8" fill="#8884d8" fillOpacity={0.5} />
+                <Radar name="동년배평균" dataKey="동년배평균" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.5} />
+                <Tooltip formatter={(value, name, props) => {
+                  if (name === '내소비') {
+                    return formatCurrency(props.payload.실제내소비) + '원';
+                  } else if (name === '동년배평균') {
+                    return formatCurrency(props.payload.실제동년배평균) + '원';
+                  }
+                  return value;
+                }} />
+                <Legend />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    );
+  };
+  
+  // 상세 비교 테이블
+  const renderComparisonTable = () => {
+    if (!comparisonData || !comparisonData.categoryComparison) return null;
+    
+    return (
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">카테고리별 상세 비교</h5>
+        </Card.Header>
+        <Card.Body>
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>카테고리</th>
+                  <th>내 소비</th>
+                  <th>동년배 평균</th>
+                  <th>차이</th>
+                  <th>비율</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonData.categoryComparison.map((item, index) => {
+                  const difference = (item.userAmount || 0) - (item.peerAmount || 0);
+                  const ratio = item.peerAmount > 0 ? ((item.userAmount || 0) / item.peerAmount) * 100 : 0;
+                  
+                  return (
+                    <tr key={index}>
+                      <td>{item.category}</td>
+                      <td>{formatCurrency(item.userAmount || 0)}원</td>
+                      <td>{formatCurrency(item.peerAmount || 0)}원</td>
+                      <td className={difference > 0 ? 'text-danger' : 'text-success'}>
+                        {difference > 0 ? '+' : ''}{formatCurrency(difference)}원
+                      </td>
+                      <td className={ratio > 100 ? 'text-danger' : ratio < 100 ? 'text-success' : ''}>
+                        {Math.round(ratio)}%
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card.Body>
+      </Card>
+    );
+  };
+  
   return (
-    <Layout>
+    <div className="page-container">
+      <Header />
+      
       <Container className="py-4">
-        <h1 className="mb-4">동년배 소비 비교</h1>
+        <div className="page-header d-flex justify-content-between align-items-center mb-4">
+          <div className="d-flex align-items-center">
+            <button className="back-button" onClick={() => navigate('/')}>
+              <FaArrowLeft />
+            </button>
+            <h1 className="mb-0">동년배 비교</h1>
+          </div>
+          
+          <div>
+            <Button 
+              variant="outline-primary" 
+              onClick={handlePrint}
+            >
+              <FaPrint /> 인쇄
+            </Button>
+          </div>
+        </div>
         
-        {/* 경고 알림 */}
-        {alertShown && overBudgetCategories.length > 0 && (
-          <SpendingAlertMessage 
-            categories={overBudgetCategories} 
-            onClose={() => setAlertShown(false)} 
-          />
+        {error && (
+          <Alert variant="danger" onClose={() => setError(null)} dismissible>
+            {error}
+          </Alert>
         )}
-
-        {/* 기간 선택 */}
+        
+        {/* 필터 패널 */}
         <Card className="mb-4">
           <Card.Body>
-            <Row className="align-items-end">
-              <Col md={3}>
+            <h5 className="mb-3">비교 조건 설정</h5>
+            <Row className="g-3">
+              <Col md={4}>
                 <Form.Group>
-                  <Form.Label>연도</Form.Label>
-                  <Form.Select value={year} onChange={handleYearChange}>
-                    {yearOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </Form.Select>
+                  <Form.Label>월 선택</Form.Label>
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={handleDateChange}
+                    dateFormat="yyyy년 MM월"
+                    showMonthYearPicker
+                    className="form-control"
+                  />
                 </Form.Group>
               </Col>
-              <Col md={3}>
-                <Form.Group>
-                  <Form.Label>월</Form.Label>
-                  <Form.Select value={month} onChange={handleMonthChange}>
-                    {monthOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={3}>
+              
+              <Col md={4}>
                 <Form.Group>
                   <Form.Label>연령대</Form.Label>
-                  <Form.Select value={ageGroup} onChange={handleAgeGroupChange}>
-                    {ageGroupOptions.map(option => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
+                  <Form.Select 
+                    value={selectedAge}
+                    onChange={handleAgeChange}
+                  >
+                    <option value="5">50대</option>
+                    <option value="6">60대</option>
+                    <option value="7">70대</option>
+                    <option value="8">80대</option>
+                    <option value="9">90대</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col md={3}>
-                <Button 
-                  variant="primary" 
-                  onClick={handleSearch} 
-                  className="w-100"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
-                      <span className="ms-2">로딩중...</span>
-                    </>
-                  ) : '조회하기'}
-                </Button>
+              
+              <Col md={4}>
+                <Form.Group>
+                  <Form.Label>성별</Form.Label>
+                  <Form.Select 
+                    value={selectedGender}
+                    onChange={handleGenderChange}
+                  >
+                    <option value="M">남성</option>
+                    <option value="F">여성</option>
+                  </Form.Select>
+                </Form.Group>
               </Col>
             </Row>
           </Card.Body>
         </Card>
-
-        {error && (
-          <Alert variant="danger">
-            {error}
+        
+        <div className="print-section">
+          {/* 안내 메시지 */}
+          <Alert variant="info" className="mb-4">
+            <div className="d-flex align-items-center">
+              <FaInfoCircle size={30} className="me-3" />
+              <div>
+                <h5 className="mb-1">동년배 비교란?</h5>
+                <p className="mb-0">
+                  귀하의 소비 패턴을 비슷한 연령대와 성별을 가진 다른 사용자들의 평균 소비와 비교하여 보여줍니다.
+                  이를 통해 자신의 소비 습관을 객관적으로 파악하고 더 나은 금융 계획을 세울 수 있습니다.
+                </p>
+              </div>
+            </div>
           </Alert>
-        )}
-        {!loading && comparisonData && (
-          <>
-            {/* 총 소비 비교 카드 */}
-            <Card className="mb-4">
-              <Card.Header>
-                <h5 className="mb-0">총 소비 비교</h5>
-              </Card.Header>
-              <Card.Body>
-                <Row>
-                  <Col md={6}>
-                    <div className="text-center mb-3">
-                      <h4>
-                        사용자: {safeFormat(comparisonData.userSpending)}원
-                      </h4>
-                      <h4>
-                        동년배 평균: {safeFormat(comparisonData.peerAverage)}원
-                      </h4>
-                      {comparisonData.userSpending !== undefined && comparisonData.peerAverage !== undefined && (
-                        <h5 className={Number(comparisonData.userSpending) > Number(comparisonData.peerAverage) ? 'text-danger' : 'text-success'}>
-                          {Number(comparisonData.userSpending) > Number(comparisonData.peerAverage) 
-                            ? `평균보다 ${safeFormat(Number(comparisonData.userSpending) - Number(comparisonData.peerAverage))}원 더 지출` 
-                            : `평균보다 ${safeFormat(Number(comparisonData.peerAverage) - Number(comparisonData.userSpending))}원 적게 지출`}
-                        </h5>
-                      )}
-                    </div>
-                  </Col>
-                  <Col md={6}>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={prepareTotalComparisonData()}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {prepareTotalComparisonData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={DEFAULT_COLORS[index % DEFAULT_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => safeFormat(value) + '원'} />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-
-            {/* 카테고리별 비교 차트 */}
-            <Card className="mb-4">
-              <Card.Header>
-                <h5 className="mb-0">카테고리별 소비 비교</h5>
-              </Card.Header>
-              <Card.Body>
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart
-                    data={prepareCategoryComparisonData()}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="category" />
-                    <YAxis />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="사용자" fill="#8884d8" />
-                    <Bar dataKey="동년배평균" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card.Body>
-            </Card>
-
-            {/* 레이더 차트 */}
-            <Card className="mb-4">
-              <Card.Header>
-                <h5 className="mb-0">카테고리별 소비 패턴</h5>
-              </Card.Header>
-              <Card.Body>
-                <ResponsiveContainer width="100%" height={400}>
-                  <RadarChart outerRadius={150} data={prepareRadarData()}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="subject" />
-                    <PolarRadiusAxis />
-                    <Radar name="사용자" dataKey="사용자" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
-                    <Radar name="동년배평균" dataKey="동년배평균" stroke="#82ca9d" fill="#82ca9d" fillOpacity={0.6} />
-                    <Legend />
-                    
-                  </RadarChart>
-                </ResponsiveContainer>
-                <div className="text-center mt-3">
-                  <small className="text-muted">
-                    * 가독성을 위해 금액에 로그 스케일이 적용되었습니다.
-                  </small>
-                </div>
-              </Card.Body>
-            </Card>
-
-            {/* 사용자 정보 */}
-            {comparisonData.userInfo && (
-              <Card>
+          
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-3">데이터를 불러오는 중...</p>
+            </div>
+          ) : comparisonData ? (
+            <>
+              {/* 요약 */}
+              <Card className="mb-4">
                 <Card.Header>
-                  <h5 className="mb-0">사용자 정보</h5>
+                  <h4 className="mb-0">{selectedAge*10}대 {selectedGender === 'M' ? '남성' : '여성'} 소비 비교</h4>
                 </Card.Header>
                 <Card.Body>
-                  <p><strong>연령대:</strong> {comparisonData.userInfo?.ageGroup || '-'}</p>
-                  <p><strong>성별:</strong> {comparisonData.userInfo?.gender === 'male' ? '남성' : comparisonData.userInfo?.gender === 'female' ? '여성' : '-'}</p>
-                  <p className="text-muted">
-                    * 동년배 비교는 사용자와 같은 연령대, 같은 성별의 평균 소비 데이터를 기반으로 합니다.
-                  </p>
+                  <Row className="text-center">
+                    <Col md={4} className="mb-3 mb-md-0">
+                      <div className="stat-item">
+                        <h6 className="text-muted">내 총 소비</h6>
+                        <h2>{formatCurrency(comparisonData.userSpending)}원</h2>
+                      </div>
+                    </Col>
+                    <Col md={4} className="mb-3 mb-md-0">
+                      <div className="stat-item">
+                        <h6 className="text-muted">동년배 평균</h6>
+                        <h2>{formatCurrency(comparisonData.peerAverage)}원</h2>
+                      </div>
+                    </Col>
+                    <Col md={4}>
+                      <div className="stat-item">
+                        <h6 className="text-muted">차이</h6>
+                        <h2 className={comparisonData.userSpending > comparisonData.peerAverage ? 'text-danger' : 'text-success'}>
+                          {comparisonData.userSpending > comparisonData.peerAverage ? '+' : ''}
+                          {formatCurrency(comparisonData.userSpending - comparisonData.peerAverage)}원
+                        </h2>
+                      </div>
+                    </Col>
+                  </Row>
                 </Card.Body>
               </Card>
-            )}
-          </>
-        )}
-
-        {loading && !error && (
-          <div className="text-center py-5">
-            <Spinner animation="border" role="status">
-              <span className="visually-hidden">로딩중...</span>
-            </Spinner>
-            <p className="mt-3">데이터를 불러오는 중입니다...</p>
-          </div>
-        )}
+              
+              <Row>
+                <Col lg={6}>
+                  {renderCategoryComparisonChart()}
+                </Col>
+                <Col lg={6}>
+                  {renderRadarChart()}
+                </Col>
+              </Row>
+              
+              {renderComparisonTable()}
+              
+              {/* 팁 및 제안 */}
+              <Card>
+                <Card.Header>
+                  <h5 className="mb-0">소비 개선 제안</h5>
+                </Card.Header>
+                <Card.Body>
+                  <Row>
+                    {comparisonData.categoryComparison.filter(item => 
+                      (item.userAmount || 0) > (item.peerAmount || 0) * 1.2
+                    ).map((item, index) => (
+                      <Col md={6} key={index} className="mb-3">
+                        <Alert variant="warning" className="mb-0">
+                          <h6>{item.category} 카테고리 절감 제안</h6>
+                          <p className="mb-0">
+                            이 카테고리에서 동년배 평균보다 약 {Math.round(((item.userAmount / item.peerAmount) - 1) * 100)}% 더 많이 지출하고 있습니다.
+                            월 {formatCurrency(item.userAmount - item.peerAmount)}원 정도를 줄이면 평균 수준이 됩니다.
+                          </p>
+                        </Alert>
+                      </Col>
+                    ))}
+                    
+                    {comparisonData.categoryComparison.filter(item => 
+                      (item.userAmount || 0) < (item.peerAmount || 0) * 0.5 && item.peerAmount > 0
+                    ).map((item, index) => (
+                      <Col md={6} key={`low-${index}`} className="mb-3">
+                        <Alert variant="info" className="mb-0">
+                          <h6>{item.category} 카테고리 참고 사항</h6>
+                          <p className="mb-0">
+                            이 카테고리에서 동년배 평균보다 상당히 적게 지출하고 있습니다.
+                            꼭 필요한 지출을 아끼고 있지는 않은지 확인해보세요.
+                          </p>
+                        </Alert>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card.Body>
+              </Card>
+            </>
+          ) : (
+            <Alert variant="info">
+              선택한 조건에 맞는 비교 데이터가 없습니다.
+            </Alert>
+          )}
+        </div>
       </Container>
-    </Layout>
+    </div>
   );
 };
 

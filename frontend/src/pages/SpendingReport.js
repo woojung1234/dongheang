@@ -1,449 +1,627 @@
+// frontend/src/pages/SpendingReport.js
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaCalendarAlt } from 'react-icons/fa';
+import { Container, Card, Button, Row, Col, Form, Spinner, Alert, Tabs, Tab } from 'react-bootstrap';
+import { FaArrowLeft, FaPrint, FaDownload, FaChartPie, FaChartBar, FaChartLine, FaCalendarAlt } from 'react-icons/fa';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell, AreaChart, Area, LineChart, Line
+} from 'recharts';
 import axios from 'axios';
-
-// 차트 컴포넌트
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
-
-// 헤더 컴포넌트
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import Header from '../components/Header';
-
-// Chart.js 등록
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
-
-// API 기본 URL 설정
-const API_BASE_URL = 'http://localhost:5000'; // 백엔드 서버 주소로 변경하세요
+import './SpendingReport.css';
 
 const SpendingReport = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [monthlyData, setMonthlyData] = useState(null);
-  const [comparisonData, setComparisonData] = useState(null);
+  const [monthlyStats, setMonthlyStats] = useState(null);
+  const [categoryStats, setCategoryStats] = useState(null);
+  const [genderStats, setGenderStats] = useState(null);
+  const [ageStats, setAgeStats] = useState(null);
+  const [activeTab, setActiveTab] = useState('monthly');
   
-  // 날짜 선택
-  const currentDate = new Date();
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  // 날짜 필터
+  const [selectedDate, setSelectedDate] = useState(new Date());
   
-  // 데이터 불러오기
+  // 컬러 팔레트
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6666', '#82ca9d', '#8dd1e1', '#a4de6c', '#d0ed57'];
+  
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchMonthlyData();
-      await fetchComparisonData();
-    };
-    
-    fetchData();
-  }, [selectedYear, selectedMonth]);
+    fetchMonthlyStats();
+  }, [selectedDate]);
   
-  // 월별 소비 통계 불러오기
-  const fetchMonthlyData = async () => {
+  useEffect(() => {
+    if (activeTab === 'category' && !categoryStats) {
+      fetchCategoryStats();
+    } else if (activeTab === 'gender' && !genderStats) {
+      fetchGenderStats();
+    } else if (activeTab === 'age' && !ageStats) {
+      fetchAgeStats();
+    }
+  }, [activeTab, categoryStats, genderStats, ageStats]);
+  
+  // 월별 통계 가져오기
+  const fetchMonthlyStats = async () => {
     try {
       setLoading(true);
-      console.log('월별 소비 통계 데이터 불러오는 중...', selectedYear, selectedMonth);
+      setError(null);
       
-      // 실제 API 호출
-      const response = await axios.get(`${API_BASE_URL}/api/spending/stats/monthly`, {
-        params: { 
-          year: selectedYear, 
-          month: selectedMonth 
-        }
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth() + 1;
+      
+      const response = await axios.get(`/api/spending/stats/monthly`, {
+        params: { year, month }
       });
       
-      console.log('API 응답 데이터:', response.data);
-      setMonthlyData(response.data);
-      setLoading(false);
-      
-    } catch (error) {
-      console.error('월별 소비 통계 데이터 로드 오류:', error);
-      setError('소비 통계를 불러오는 중 오류가 발생했습니다.');
-      setLoading(false);
-      
-      // 에러 발생 시에도 UI를 표시하기 위한 임시 데이터 설정
-      // 실제 환경에서 필요에 따라 제거하거나 수정하세요
-      setMonthlyData({
-        year: selectedYear,
-        month: selectedMonth,
-        totalSpending: 0,
-        categorySummary: [],
-        dailySummary: []
-      });
-    }
-  };
-  
-  // 동년배 비교 데이터 불러오기
-  const fetchComparisonData = async () => {
-    try {
-      console.log('동년배 비교 데이터 불러오는 중...');
-      
-      // 실제 API 호출
-      const response = await axios.get(`${API_BASE_URL}/api/spending/comparison`, {
-        params: { 
-          year: selectedYear, 
-          month: selectedMonth 
-        }
-      });
-      
-      console.log('API 응답 데이터:', response.data);
-      setComparisonData(response.data);
-      
-    } catch (error) {
-      console.error('동년배 비교 데이터 로드 오류:', error);
-      // 동년배 비교 데이터 로드 실패는 치명적이지 않으므로 메인 오류 상태에는 설정하지 않음
-    }
-  };
-  
-  // 차트 데이터 구성
-  const getPieChartData = () => {
-    if (!monthlyData || !monthlyData.categorySummary || monthlyData.categorySummary.length === 0) return null;
-    
-    const labels = monthlyData.categorySummary.map(item => item.category);
-    const data = monthlyData.categorySummary.map(item => item.total);
-    const backgroundColors = [
-      '#FF9F40', // 소매/유통
-      '#36A2EB', // 생활서비스
-      '#4BC0C0', // 여가/오락
-      '#FF6384', // 의료/건강
-      '#FFCD56', // 음식
-      '#9966FF', // 학문/교육
-      '#C9CBCF', // 공연/전시
-      '#6C757D'  // 미디어/통신
-    ];
-    
-    return {
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: backgroundColors,
-          borderWidth: 1
-        }
-      ]
-    };
-  };
-  
-  const getBarChartData = () => {
-    if (!monthlyData || !monthlyData.dailySummary || monthlyData.dailySummary.length === 0) return null;
-    
-    // 주별로 그룹화
-    const weeks = [[], [], [], [], []];
-    monthlyData.dailySummary.forEach((day, index) => {
-      const weekIndex = Math.floor(index / 7);
-      if (weekIndex < 5) {
-        weeks[weekIndex].push(day);
+      if (response.data.success) {
+        setMonthlyStats(response.data.data);
+      } else {
+        setError('월별 통계를 불러오는데 실패했습니다.');
       }
-    });
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('월별 통계 로딩 오류:', error);
+      setError('월별 통계를 불러오는 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
+  };
+  
+  // 카테고리별 통계 가져오기
+  const fetchCategoryStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axios.get('/api/spending/stats/category');
+      
+      if (response.data.success) {
+        setCategoryStats(response.data.data);
+      } else {
+        setError('카테고리별 통계를 불러오는데 실패했습니다.');
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('카테고리별 통계 로딩 오류:', error);
+      setError('카테고리별 통계를 불러오는 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
+  };
+  
+  // 성별 통계 가져오기
+  const fetchGenderStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axios.get('/api/spending/stats/gender');
+      
+      if (response.data.success) {
+        setGenderStats(response.data.data);
+      } else {
+        setError('성별 통계를 불러오는데 실패했습니다.');
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('성별 통계 로딩 오류:', error);
+      setError('성별 통계를 불러오는 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
+  };
+  
+  // 연령별 통계 가져오기
+  const fetchAgeStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await axios.get('/api/spending/stats/age');
+      
+      if (response.data.success) {
+        setAgeStats(response.data.data);
+      } else {
+        setError('연령별 통계를 불러오는데 실패했습니다.');
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('연령별 통계 로딩 오류:', error);
+      setError('연령별 통계를 불러오는 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
+  };
+  
+  // 날짜 변경 처리
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+  };
+  
+  // 금액 형식화
+  const formatCurrency = (amount) => {
+    if (amount === undefined || amount === null) return '0';
+    return new Intl.NumberFormat('ko-KR').format(amount);
+  };
+  
+  // 리포트 인쇄
+  const handlePrint = () => {
+    window.print();
+  };
+  
+  // 리포트 이미지로 저장
+  const handleSaveAsImage = () => {
+    const printSection = document.querySelector('.print-section');
+    if (!printSection) return;
     
-    // 주별 합계 계산
-    const weeklyData = weeks.map((week, index) => ({
-      label: `${index + 1}주차`,
-      total: week.reduce((sum, day) => sum + day.total, 0)
+    import('html2canvas').then(html2canvas => {
+      html2canvas.default(printSection).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `소비리포트_${selectedDate.getFullYear()}_${selectedDate.getMonth() + 1}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    });
+  };
+  
+  // 월별 카테고리 분포 차트
+  const renderMonthlyCategoryChart = () => {
+    if (!monthlyStats || !monthlyStats.categorySummary) return null;
+    
+    const data = monthlyStats.categorySummary.map((cat, index) => ({
+      name: cat.category,
+      value: cat.total,
+      percentage: cat.percentage
     }));
     
-    return {
-      labels: weeklyData.map(week => week.label),
-      datasets: [
-        {
-          label: '주별 지출',
-          data: weeklyData.map(week => week.total),
-          backgroundColor: '#FF9D3D',
-          borderWidth: 1
-        }
-      ]
-    };
+    return (
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">카테고리별 지출 분포</h5>
+        </Card.Header>
+        <Card.Body>
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={({ name, percentage }) => `${name}: ${percentage}%`}
+                  labelLine={true}
+                >
+                  {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    );
   };
   
-  const getComparisonChartData = () => {
-    if (!comparisonData || !comparisonData.categoryComparison || comparisonData.categoryComparison.length === 0) return null;
+  // 일별 지출 차트
+  const renderDailySpendingChart = () => {
+    if (!monthlyStats || !monthlyStats.dailySummary) return null;
     
-    return {
-      labels: comparisonData.categoryComparison.map(item => item.category),
-      datasets: [
-        {
-          label: '나의 지출',
-          data: comparisonData.categoryComparison.map(item => item.userAmount),
-          backgroundColor: '#FF9D3D',
-          stack: 'Stack 0'
-        },
-        {
-          label: '동년배 평균',
-          data: comparisonData.categoryComparison.map(item => item.peerAmount),
-          backgroundColor: '#805B38',
-          stack: 'Stack 1'
-        }
-      ]
-    };
+    const data = monthlyStats.dailySummary.map(item => ({
+      날짜: item.day,
+      지출: item.total
+    }));
+    
+    return (
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">일별 지출 추이</h5>
+        </Card.Header>
+        <Card.Body>
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="날짜" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                <Legend />
+                <Area type="monotone" dataKey="지출" stroke="#8884d8" fill="#8884d8" activeDot={{ r: 8 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    );
   };
   
-  // 옵션
-  const pieChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          font: {
-            size: 14
-          }
-        }
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const label = context.label || '';
-            const value = context.raw.toLocaleString() + '원';
-            const percentage = monthlyData.categorySummary[context.dataIndex].percentage + '%';
-            return `${label}: ${value} (${percentage})`;
-          }
-        }
-      }
-    }
+  // 카테고리별 통계 차트
+  const renderCategoryStatsChart = () => {
+    if (!categoryStats || !categoryStats.allCategories) return null;
+    
+    // 상위 5개 카테고리만 표시
+    const data = categoryStats.allCategories.slice(0, 5).map(cat => ({
+      name: cat.category,
+      금액: cat.totalSpent,
+      비율: cat.percentage
+    }));
+    
+    return (
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">상위 5개 카테고리 총 지출</h5>
+        </Card.Header>
+        <Card.Body>
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                <Legend />
+                <Bar dataKey="금액" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    );
   };
   
-  const barChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: '주별 지출 현황',
-        font: {
-          size: 16
-        }
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const value = context.raw.toLocaleString() + '원';
-            return value;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(value) {
-            return value.toLocaleString() + '원';
-          }
-        }
-      }
-    }
+  // 성별 통계 차트
+  const renderGenderStatsChart = () => {
+    if (!genderStats || !genderStats.genderStats) return null;
+    
+    const data = genderStats.genderStats.map(item => ({
+      name: item._id === 'M' ? '남성' : '여성',
+      평균지출: Math.round(item.avgSpending),
+      건수: item.count
+    }));
+    
+    return (
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">성별 평균 지출</h5>
+        </Card.Header>
+        <Card.Body>
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                <Legend />
+                <Bar dataKey="평균지출" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    );
   };
   
-  const comparisonChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: '동년배 평균 비교',
-        font: {
-          size: 16
-        }
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const value = context.raw.toLocaleString() + '원';
-            return `${context.dataset.label}: ${value}`;
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        stacked: false,
-      },
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: function(value) {
-            return value.toLocaleString() + '원';
-          }
-        }
-      }
-    }
-  };
-  
-  // 월 변경 처리
-  const handleMonthChange = (e) => {
-    const monthValue = parseInt(e.target.value);
-    if (monthValue >= 1 && monthValue <= 12) {
-      setSelectedMonth(monthValue);
-    }
-  };
-  
-  // 연도 변경 처리
-  const handleYearChange = (e) => {
-    const yearValue = parseInt(e.target.value);
-    if (yearValue >= 2000 && yearValue <= 2030) {
-      setSelectedYear(yearValue);
-    }
+  // 연령별 통계 차트
+  const renderAgeStatsChart = () => {
+    if (!ageStats || !ageStats.ageStats) return null;
+    
+    const data = ageStats.ageStats.map(item => ({
+      name: item.ageGroup,
+      평균지출: item.avgSpent,
+      총지출: item.totalSpent
+    }));
+    
+    return (
+      <Card className="mb-4">
+        <Card.Header>
+          <h5 className="mb-0">연령대별 평균 지출</h5>
+        </Card.Header>
+        <Card.Body>
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                <Legend />
+                <Bar dataKey="평균지출" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card.Body>
+      </Card>
+    );
   };
   
   return (
     <div className="page-container">
       <Header />
       
-      <div className="page-content">
-        <div className="page-header">
-          <button className="back-button" onClick={() => navigate('/')}>
-            <FaArrowLeft />
-          </button>
-          <h1>소비 리포트</h1>
-        </div>
-        
-        {error && <div className="error-message">{error}</div>}
-        
-        {/* 날짜 선택 */}
-        <div className="date-selector">
-          <div className="date-icon">
-            <FaCalendarAlt />
+      <Container className="py-4">
+        <div className="page-header d-flex justify-content-between align-items-center mb-4">
+          <div className="d-flex align-items-center">
+            <button className="back-button" onClick={() => navigate('/')}>
+              <FaArrowLeft />
+            </button>
+            <h1 className="mb-0">소비 리포트</h1>
           </div>
-          <div className="date-inputs">
-            <select 
-              value={selectedYear}
-              onChange={handleYearChange}
-              className="year-select"
+          
+          <div>
+            <Button 
+              variant="outline-primary" 
+              className="me-2"
+              onClick={handlePrint}
             >
-              {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map(year => (
-                <option key={year} value={year}>{year}년</option>
-              ))}
-            </select>
-            <select 
-              value={selectedMonth}
-              onChange={handleMonthChange}
-              className="month-select"
+              <FaPrint /> 인쇄
+            </Button>
+            
+            <Button 
+              variant="outline-primary" 
+              onClick={handleSaveAsImage}
             >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                <option key={month} value={month}>{month}월</option>
-              ))}
-            </select>
+              <FaDownload /> 저장
+            </Button>
           </div>
         </div>
         
-        {loading ? (
-          <div className="loading">소비 리포트를 불러오는 중...</div>
-        ) : monthlyData ? (
-          <div className="report-container">
-            {/* 월별 총 지출 */}
-            <div className="total-spending card">
-              <h2>월별 총 지출</h2>
-              <div className="total-amount">
-                {monthlyData.totalSpending ? monthlyData.totalSpending.toLocaleString() : 0}원
-              </div>
-              {comparisonData && (
-                <div className="comparison-summary">
-                  {comparisonData.userSpending < comparisonData.peerAverage ? (
-                    <div className="good-comparison">
-                      동년배 평균보다 {(comparisonData.peerAverage - comparisonData.userSpending).toLocaleString()}원 적게 지출했습니다.
-                    </div>
-                  ) : (
-                    <div className="bad-comparison">
-                      동년배 평균보다 {(comparisonData.userSpending - comparisonData.peerAverage).toLocaleString()}원 더 지출했습니다.
-                    </div>
-                  )}
+        {error && (
+          <Alert variant="danger" onClose={() => setError(null)} dismissible>
+            {error}
+          </Alert>
+        )}
+        
+        {/* 분석 유형 선택 */}
+        <Tabs
+          activeKey={activeTab}
+          onSelect={key => setActiveTab(key)}
+          className="mb-4 report-tabs"
+        >
+          <Tab eventKey="monthly" title={<><FaCalendarAlt className="me-2" />월간 리포트</>} />
+          <Tab eventKey="category" title={<><FaChartPie className="me-2" />카테고리 분석</>} />
+          <Tab eventKey="gender" title={<><FaChartBar className="me-2" />성별 분석</>} />
+          <Tab eventKey="age" title={<><FaChartLine className="me-2" />연령별 분석</>} />
+        </Tabs>
+        
+        {activeTab === 'monthly' && (
+          <>
+            {/* 월 선택 */}
+            <Card className="mb-4">
+              <Card.Body>
+                <div className="d-flex align-items-center justify-content-between">
+                  <h5 className="mb-0">월 선택</h5>
+                  <div style={{ width: '200px' }}>
+                    <DatePicker
+                      selected={selectedDate}
+                      onChange={handleDateChange}
+                      dateFormat="yyyy년 MM월"
+                      showMonthYearPicker
+                      className="form-control date-picker"
+                    />
+                  </div>
                 </div>
+              </Card.Body>
+            </Card>
+            
+            <div className="print-section">
+              {/* 월별 요약 */}
+              {loading ? (
+                <div className="text-center py-5">
+                  <Spinner animation="border" variant="primary" />
+                  <p className="mt-3">데이터를 불러오는 중...</p>
+                </div>
+              ) : monthlyStats ? (
+                <>
+                  <Card className="mb-4">
+                    <Card.Header>
+                      <h4 className="mb-0">{monthlyStats.year}년 {monthlyStats.month}월 소비 요약</h4>
+                    </Card.Header>
+                    <Card.Body>
+                      <Row className="text-center">
+                        <Col md={4} className="mb-3 mb-md-0">
+                          <div className="stat-item">
+                            <h6 className="text-muted">총 소비 금액</h6>
+                            <h2>{formatCurrency(monthlyStats.totalSpending)}원</h2>
+                          </div>
+                        </Col>
+                        <Col md={4} className="mb-3 mb-md-0">
+                          <div className="stat-item">
+                            <h6 className="text-muted">거래 건수</h6>
+                            <h2>{monthlyStats.transactionCount}건</h2>
+                          </div>
+                        </Col>
+                        <Col md={4}>
+                          <div className="stat-item">
+                            <h6 className="text-muted">건당 평균 금액</h6>
+                            <h2>
+                              {formatCurrency(
+                                Math.round(monthlyStats.totalSpending / monthlyStats.transactionCount)
+                              )}원
+                            </h2>
+                          </div>
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
+                  
+                  <Row>
+                    <Col lg={6}>
+                      {renderMonthlyCategoryChart()}
+                    </Col>
+                    <Col lg={6}>
+                      {renderDailySpendingChart()}
+                    </Col>
+                  </Row>
+                </>
+              ) : (
+                <Alert variant="info">
+                  선택한 월의 소비 데이터가 없습니다.
+                </Alert>
               )}
             </div>
-            
-            {/* 카테고리별 지출 */}
-            <div className="category-spending card">
-              <h2>카테고리별 지출</h2>
-              <div className="chart-container">
-                {getPieChartData() && (
-                  <Pie data={getPieChartData()} options={pieChartOptions} />
-                )}
+          </>
+        )}
+        
+        {activeTab === 'category' && (
+          <div className="print-section">
+            {loading ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3">데이터를 불러오는 중...</p>
               </div>
-              <div className="category-details">
-                {monthlyData.categorySummary && monthlyData.categorySummary.map((category, index) => (
-                  <div key={index} className="category-item">
-                    <div className="category-name">{category.category}</div>
-                    <div className="category-amount">{category.total.toLocaleString()}원</div>
-                    <div className="category-percentage">{category.percentage}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            {/* 주별 지출 추이 */}
-            <div className="weekly-spending card">
-              <h2>주별 지출 추이</h2>
-              <div className="chart-container">
-                {getBarChartData() && (
-                  <Bar data={getBarChartData()} options={barChartOptions} />
-                )}
-              </div>
-            </div>
-            
-            {/* 동년배 비교 */}
-            {comparisonData && (
-              <div className="peer-comparison card">
-                <h2>동년배 평균 비교</h2>
-                <div className="chart-container">
-                  {getComparisonChartData() && (
-                    <Bar data={getComparisonChartData()} options={comparisonChartOptions} />
-                  )}
-                </div>
-                <div className="comparison-insight">
-                  {comparisonData.categoryComparison && comparisonData.categoryComparison.length > 0 && (
-                    <>
-                      <h3>소비 패턴 분석</h3>
-                      <p>
-                        당신은 동년배보다 {comparisonData.categoryComparison[0].category}({(comparisonData.categoryComparison[0].userAmount - comparisonData.categoryComparison[0].peerAmount).toLocaleString()}원)에 더 많이 지출하고,
-                        {comparisonData.categoryComparison.length > 4 ? comparisonData.categoryComparison[4].category : '다른 카테고리'}({comparisonData.categoryComparison.length > 4 ? (comparisonData.categoryComparison[4].peerAmount - comparisonData.categoryComparison[4].userAmount).toLocaleString() : 0}원)에는 덜 지출하고 있습니다.
-                      </p>
-                      <p>
-                        전체적으로 동년배 평균보다 {comparisonData.userSpending < comparisonData.peerAverage ? '적게' : '많이'} 지출하고 있어요.
-                        {comparisonData.userSpending > comparisonData.peerAverage && ' 지출 관리에 좀 더 신경 쓰면 좋을 것 같아요.'}
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
+            ) : categoryStats ? (
+              <>
+                {renderCategoryStatsChart()}
+                
+                <Card>
+                  <Card.Header>
+                    <h5 className="mb-0">카테고리별 상세 분석</h5>
+                  </Card.Header>
+                  <Card.Body>
+                    <div className="table-responsive">
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>카테고리</th>
+                            <th>총 지출</th>
+                            <th>거래 건수</th>
+                            <th>평균 지출</th>
+                            <th>비율</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {categoryStats.allCategories.map((cat, index) => (
+                            <tr key={index}>
+                              <td>{cat.category}</td>
+                              <td>{formatCurrency(cat.totalSpent)}원</td>
+                              <td>{cat.count}건</td>
+                              <td>{formatCurrency(cat.avgSpent)}원</td>
+                              <td>{cat.percentage}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </>
+            ) : (
+              <Alert variant="info">
+                카테고리별 분석 데이터가 없습니다.
+              </Alert>
             )}
-            
-            {/* 지출 조언 */}
-            <div className="spending-advice card">
-              <h2>이번 달 지출 조언</h2>
-              <div className="advice-content">
-                {monthlyData.categorySummary && monthlyData.categorySummary.length > 0 ? (
-                  <>
-                    <p>
-                      {monthlyData.categorySummary[0].category}이 전체 지출의 {monthlyData.categorySummary[0].percentage}%를 차지하고 있습니다. 
-                      생필품 구매 계획을 세워 불필요한 지출을 줄여보세요.
-                    </p>
-                    {monthlyData.categorySummary.length > 2 && (
-                      <p>
-                        {monthlyData.categorySummary[2].category} 비용은 전체의 {monthlyData.categorySummary[2].percentage}%를 차지합니다.
-                        지역 내 무료 문화 행사나 공공시설을 활용하면 비용을 절약할 수 있습니다.
-                      </p>
-                    )}
-                    <p>
-                      다음 달 예상 지출은 약 {(monthlyData.totalSpending * 0.95).toLocaleString()}원 정도로 예상됩니다.
-                      계획적인 소비로 금액을 더 줄여보세요!
-                    </p>
-                  </>
-                ) : (
-                  <p>아직 충분한 소비 데이터가 없어 조언을 제공할 수 없습니다.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="no-data">
-            소비 데이터가 없습니다.
           </div>
         )}
-      </div>
+        
+        {activeTab === 'gender' && (
+          <div className="print-section">
+            {loading ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3">데이터를 불러오는 중...</p>
+              </div>
+            ) : genderStats ? (
+              <>
+                {renderGenderStatsChart()}
+                
+                // frontend/src/pages/SpendingReport.js (계속)
+
+                <Card>
+                  <Card.Header>
+                    <h5 className="mb-0">성별 지출 상세 분석</h5>
+                  </Card.Header>
+                  <Card.Body>
+                    <Row>
+                      {genderStats.categoryByGender && Object.values(genderStats.categoryByGender).map((item, index) => (
+                        <Col lg={6} key={index} className="mb-4">
+                          <h5>{item.categoryName} 카테고리 성별 비교</h5>
+                          <div style={{ height: 250 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={[
+                                { name: '남성', 금액: item.M?.avg || 0 },
+                                { name: '여성', 금액: item.F?.avg || 0 }
+                              ]}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                                <Legend />
+                                <Bar dataKey="금액" fill="#8884d8" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </Card.Body>
+                </Card>
+              </>
+            ) : (
+              <Alert variant="info">
+                성별 분석 데이터가 없습니다.
+              </Alert>
+            )}
+          </div>
+        )}
+        
+        {activeTab === 'age' && (
+          <div className="print-section">
+            {loading ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3">데이터를 불러오는 중...</p>
+              </div>
+            ) : ageStats ? (
+              <>
+                {renderAgeStatsChart()}
+                
+                <Card>
+                  <Card.Header>
+                    <h5 className="mb-0">연령대별 상위 지출 카테고리</h5>
+                  </Card.Header>
+                  <Card.Body>
+                    <Row>
+                      {ageStats.ageGroupCategories && ageStats.ageGroupCategories.map((ageGroup, index) => (
+                        <Col lg={6} key={index} className="mb-4">
+                          <h5>{ageGroup.ageGroup} 상위 지출 카테고리</h5>
+                          <div style={{ height: 250 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={ageGroup.topCategories.map(cat => ({
+                                name: cat.category,
+                                금액: cat.avgSpent
+                              }))}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip formatter={(value) => formatCurrency(value) + '원'} />
+                                <Legend />
+                                <Bar dataKey="금액" fill="#8884d8" />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </Col>
+                      ))}
+                    </Row>
+                  </Card.Body>
+                </Card>
+              </>
+            ) : (
+              <Alert variant="info">
+                연령대별 분석 데이터가 없습니다.
+              </Alert>
+            )}
+          </div>
+        )}
+      </Container>
     </div>
   );
 };

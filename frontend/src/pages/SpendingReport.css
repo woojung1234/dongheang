@@ -1,0 +1,85 @@
+/* frontend/src/pages/SpendingReport.css */
+
+.report-tabs .nav-link {
+    font-size: 1.1rem;
+    padding: 0.75rem 1.25rem;
+  }
+  
+  .stat-item {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+  }
+  
+  .stat-item h2 {
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+  
+  .date-picker {
+    font-size: 1.1rem;
+    text-align: center;
+  }
+  
+  /* 인쇄 스타일 */
+  @media print {
+    .page-header, 
+    .nav-tabs,
+    .header,
+    .footer,
+    button:not(.print-section button) {
+      display: none !important;
+    }
+    
+    .print-section {
+      page-break-inside: avoid;
+    }
+    
+    .container {
+      max-width: 100% !important;
+      width: 100% !important;
+      padding: 0 !important;
+    }
+    
+    .stat-item h2 {
+      font-size: 1.5rem !important;
+    }
+    
+    .card {
+      border: 1px solid #ddd !important;
+      box-shadow: none !important;
+      margin-bottom: 1rem !important;
+    }
+    
+    .card-header {
+      background-color: #f8f9fa !important;
+      color: #000 !important;
+    }
+  }
+  
+  /* 고대비 모드 대응 */
+  @media (prefers-contrast: more) {
+    .stat-item {
+      border-left: 4px solid #000;
+    }
+    
+    .nav-tabs .nav-link.active {
+      background-color: #000 !important;
+      color: #fff !important;
+      border-color: #000 !important;
+    }
+  }
+  
+  /* 고령자를 위한 큰 글씨 지원 */
+  @media (min-width: 992px) {
+    .stat-item h2 {
+      font-size: 2rem;
+    }
+    
+    .stat-item h6 {
+      font-size: 1.1rem;
+    }
+    
+    .table {
+      font-size: 1.1rem;
+    }
+  }

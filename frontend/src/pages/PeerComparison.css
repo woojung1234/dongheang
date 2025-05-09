@@ -1,0 +1,87 @@
+/* frontend/src/pages/PeerComparison.css */
+
+.stat-item {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+  }
+  
+  .stat-item h2 {
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+  
+  .text-danger {
+    color: #dc3545 !important;
+  }
+  
+  .text-success {
+    color: #28a745 !important;
+  }
+  
+  /* 인쇄 스타일 */
+  @media print {
+    .page-header, 
+    .header,
+    .footer,
+    button:not(.print-section button) {
+      display: none !important;
+    }
+    
+    .print-section {
+      page-break-inside: avoid;
+    }
+    
+    .container {
+      max-width: 100% !important;
+      width: 100% !important;
+      padding: 0 !important;
+    }
+    
+    .stat-item h2 {
+      font-size: 1.5rem !important;
+    }
+    
+    .card {
+      border: 1px solid #ddd !important;
+      box-shadow: none !important;
+      margin-bottom: 1rem !important;
+    }
+    
+    .card-header {
+      background-color: #f8f9fa !important;
+      color: #000 !important;
+    }
+  }
+  
+  /* 고대비 모드 대응 */
+  @media (prefers-contrast: more) {
+    .stat-item {
+      border-left: 4px solid #000;
+    }
+    
+    .text-danger {
+      color: #000 !important;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    
+    .text-success {
+      color: #000 !important;
+      font-weight: bold;
+    }
+  }
+  
+  /* 고령자를 위한 큰 글씨 지원 */
+  @media (min-width: 992px) {
+    .stat-item h2 {
+      font-size: 2rem;
+    }
+    
+    .stat-item h6 {
+      font-size: 1.1rem;
+    }
+    
+    .table {
+      font-size: 1.1rem;
+    }
+  }
