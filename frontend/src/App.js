@@ -14,6 +14,7 @@ import SpendingReport from './pages/SpendingReport';
 import PeerComparison from './pages/PeerComparison';
 import SpendingPrediction from './pages/SpendingPrediction';
 import BudgetRecommendation from './pages/BudgetRecommendation';
+import ChatbotPage from './pages/ChatbotPage'; // 새로 추가
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 
@@ -56,6 +57,7 @@ function App() {
             <Route path="/peer-comparison" element={<PeerComparison />} />
             <Route path="/spending-prediction" element={<SpendingPrediction />} />
             <Route path="/budget-recommendation" element={<BudgetRecommendation />} />
+            <Route path="/chatbot" element={<ChatbotPage />} /> {/* 새로 추가 */}
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

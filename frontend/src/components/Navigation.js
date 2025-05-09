@@ -1,7 +1,8 @@
+// Navigation.js 수정
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Navbar, Nav, Container } from 'react-bootstrap';
-import { FaHome, FaListUl, FaHandHoldingHeart, FaChartBar, FaExchangeAlt, FaChartLine, FaCalculator, FaSeedling } from 'react-icons/fa';
+import { FaHome, FaListUl, FaHandHoldingHeart, FaChartBar, FaExchangeAlt, FaChartLine, FaCalculator, FaSeedling, FaRobot } from 'react-icons/fa';
 
 // 컨텍스트
 import AuthContext from '../context/AuthContext';
@@ -31,30 +32,34 @@ const Navigation = () => {
             
             {isAuthenticated && (
               <>
-                <Nav.Link as={Link} to="/consumption" active={isActive('/consumption')} className="nav-link-grass">
+                <Nav.Link as={Link} to="/consumption-history" active={isActive('/consumption-history')} className="nav-link-grass">
                   <FaListUl className="me-1" /> 소비 내역
                 </Nav.Link>
                 
-                <Nav.Link as={Link} to="/report" active={isActive('/report')} className="nav-link-grass">
+                <Nav.Link as={Link} to="/spending-report" active={isActive('/spending-report')} className="nav-link-grass">
                   <FaChartBar className="me-1" /> 소비 리포트
                 </Nav.Link>
                 
-                <Nav.Link as={Link} to="/comparison" active={isActive('/comparison')} className="nav-link-grass">
+                <Nav.Link as={Link} to="/peer-comparison" active={isActive('/peer-comparison')} className="nav-link-grass">
                   <FaExchangeAlt className="me-1" /> 동년배 비교
                 </Nav.Link>
                 
-                <Nav.Link as={Link} to="/prediction" active={isActive('/prediction')} className="nav-link-grass">
+                <Nav.Link as={Link} to="/spending-prediction" active={isActive('/spending-prediction')} className="nav-link-grass">
                   <FaChartLine className="me-1" /> 소비 예측
                 </Nav.Link>
                 
-                <Nav.Link as={Link} to="/budget" active={isActive('/budget')} className="nav-link-grass">
+                <Nav.Link as={Link} to="/budget-recommendation" active={isActive('/budget-recommendation')} className="nav-link-grass">
                   <FaCalculator className="me-1" /> 예산 추천
                 </Nav.Link>
               </>
             )}
             
-            <Nav.Link as={Link} to="/welfare" active={isActive('/welfare')} className="nav-link-grass">
+            <Nav.Link as={Link} to="/welfare-services" active={isActive('/welfare-services')} className="nav-link-grass">
               <FaHandHoldingHeart className="me-1" /> 복지 서비스
+            </Nav.Link>
+            
+            <Nav.Link as={Link} to="/chatbot" active={isActive('/chatbot')} className="nav-link-grass">
+              <FaRobot className="me-1" /> 금복이 대화
             </Nav.Link>
           </Nav>
         </Navbar.Collapse>

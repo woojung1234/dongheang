@@ -2,16 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Spinner, Alert } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import Chatbot from '../components/Chatbot';
 import { getMonthlyStats, getComparisonStats } from '../services/spendingService';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import axios from 'axios';
 
 const Home = () => {
-  // 상태 관리
+  // 기존 상태 관리
   const [spendingData, setSpendingData] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [alertVisible, setAlertVisible] = useState(true);
+  
+  // 챗봇 관련 상태 추가
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: 'bot',
+      content: '안녕하세요! 금복이입니다. 금융 복지에 관한 질문이 있으신가요?'
+    }
+  ]);
+  const [chatSessionId, setChatSessionId] = useState(`session_${Date.now()}`);
+  const [isChatbotVisible, setIsChatbotVisible] = useState(false);
 
   // 현재 연월 구하기
   const currentDate = new Date();
@@ -63,6 +76,66 @@ const Home = () => {
   
     fetchData();
   }, [currentYear, currentMonth]);
+
+  // 챗봇 메시지 전송 함수
+  const handleSendMessage = async (message) => {
+    // 사용자 메시지 추가
+    const userMessage = {
+      id: Date.now(),
+      sender: 'user',
+      content: message
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    
+    try {
+      // 로딩 메시지 표시
+      const loadingMessage = {
+        id: Date.now() + 1,
+        sender: 'bot',
+        content: '생각 중...',
+        isLoading: true
+      };
+      
+      setMessages(prev => [...prev, loadingMessage]);
+      
+      // API 호출
+      const response = await axios.post('/api/chatbot/message', {
+        message: message,
+        sessionId: chatSessionId
+      });
+      
+      // 로딩 메시지 제거
+      setMessages(prev => prev.filter(msg => !msg.isLoading));
+      
+      // 봇 응답 추가
+      if (response.data.success) {
+        const botMessage = {
+          id: Date.now() + 2,
+          sender: 'bot',
+          content: response.data.data.message.content
+        };
+        
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        throw new Error('응답 처리 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('챗봇 메시지 전송 오류:', error);
+      
+      // 로딩 메시지 제거
+      setMessages(prev => prev.filter(msg => !msg.isLoading));
+      
+      // 오류 메시지 표시
+      const errorMessage = {
+        id: Date.now() + 3,
+        sender: 'bot',
+        content: '죄송합니다. 메시지 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    }
+  };
 
   // 소비 경고 알림 컴포넌트
   const SpendingAlert = () => {
@@ -149,6 +222,11 @@ const Home = () => {
       }
     }
     return null;
+  };
+
+  // 챗봇 토글 함수
+  const toggleChatbot = () => {
+    setIsChatbotVisible(!isChatbotVisible);
   };
 
   return (
@@ -245,6 +323,28 @@ const Home = () => {
             </Card>
           </Col>
         </Row>
+
+        {/* 금복이 챗봇 */}
+        <Card className="mb-4">
+          <Card.Header className="d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">금복이와 대화하기</h5>
+            <Button 
+              variant="outline-primary" 
+              size="sm"
+              onClick={toggleChatbot}
+            >
+              {isChatbotVisible ? '숨기기' : '보이기'}
+            </Button>
+          </Card.Header>
+          {isChatbotVisible && (
+            <Card.Body>
+              <Chatbot 
+                messages={messages} 
+                onSendMessage={handleSendMessage} 
+              />
+            </Card.Body>
+          )}
+        </Card>
 
         {/* 소비 트렌드 */}
         {!loading && monthlyStats && monthlyStats.dailySummary && monthlyStats.dailySummary.length > 0 && (

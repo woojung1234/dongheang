@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaPaperPlane, FaMicrophone, FaRobot } from 'react-icons/fa';
+import './Chatbot.css'; // CSS 스타일 파일 추가
 
 const Chatbot = ({ messages, onSendMessage }) => {
   const [input, setInput] = useState('');
