@@ -1,0 +1,95 @@
+.dashboard-card {
+    height: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    margin-bottom: 15px;
+  }
+  
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .dashboard-card .card-header {
+    background-color: #f8f9fa;
+    font-weight: 500;
+  }
+  
+  .budget-progress-container {
+    padding: 10px 0;
+  }
+  
+  .notification-item:hover {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+  }
+  
+  .welfare-recommendations .recommendation-item {
+    border-left: 3px solid #0d6efd;
+    padding-left: 10px;
+  }
+  
+  .welfare-recommendations .recommendation-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .recent-chat .chat-preview {
+    border-left: 3px solid #0d6efd;
+  }
+  
+  /* 반응형 디자인 */
+  @media (max-width: 992px) {
+    .dashboard-card {
+      height: auto;
+      margin-bottom: 20px;
+    }
+  }
+  
+  /* 고령자를 위한 접근성 향상 */
+  .dashboard-card h5, 
+  .dashboard-card h6,
+  .dashboard-card .btn {
+    font-size: 1.1rem;
+  }
+  
+  .dashboard-card p, 
+  .dashboard-card span {
+    font-size: 1rem;
+  }
+  
+  .dashboard-card h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+  
+  /* 차트 툴팁 스타일링 */
+  .recharts-tooltip-wrapper {
+    font-size: 1.1rem;
+  }
+  
+  /* 버튼 크기 및 여백 조정 */
+  .card-body .btn {
+    padding: 0.5rem 1rem;
+  }
+  
+  /* 컬러 팔레트 */
+  .card-header {
+    color: #345995;
+  }
+  
+  .budget-labels {
+    color: #444;
+  }
+  
+  /* 알림 타입별 색상 */
+  .badge.bg-budget {
+    background-color: #F9A826;
+  }
+  
+  .badge.bg-welfare {
+    background-color: #3DB2FF;
+  }
+  
+  .badge.bg-spending {
+    background-color: #7B61FF;
+  }

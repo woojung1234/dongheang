@@ -18,6 +18,8 @@ import ChatbotPage from './pages/ChatbotPage'; // 새로 추가
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import WelfareServiceDetail from './pages/WelfareServiceDetail';
+import Dashboard from './pages/Dashboard';
+
 
 // 컨텍스트
 import { AuthProvider } from './context/AuthContext';
@@ -52,6 +54,7 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/consumption-history" element={<ConsumptionHistory />} />
             <Route path="/welfare-services" element={<WelfareServices />} />
             <Route path="/welfare-services/:id" element={<WelfareServiceDetail />} />
