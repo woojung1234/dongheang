@@ -1,97 +1,57 @@
+// frontend/src/pages/WelfareServices.js
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaSearch } from 'react-icons/fa';
-import axios from 'axios';
-
-// 컴포넌트
+import { FaArrowLeft, FaSearch, FaSync, FaPrint } from 'react-icons/fa';
+import { Container, Card, Button, Spinner, Alert, Form, Pagination } from 'react-bootstrap';
 import Header from '../components/Header';
 import WelfareItem from '../components/WelfareItem';
+import { getWelfareServices, searchWelfareServices, syncWelfareServices } from '../services/welfareService';
 
 const WelfareServices = () => {
   const navigate = useNavigate();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [activeService, setActiveService] = useState(null);
-  
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20, // 한 페이지에 더 많은 서비스 표시
+    total: 0,
+    pages: 0
+  });
+  const [syncing, setSyncing] = useState(false);
+
   // 복지 서비스 불러오기
   useEffect(() => {
-    fetchServices();
-  }, [selectedCategory]);
+    fetchServices(1); // 첫 페이지부터 시작
+  }, []);
   
-  const fetchServices = async () => {
+  const fetchServices = async (page = 1) => {
     try {
       setLoading(true);
-      console.log('복지 서비스 데이터 불러오는 중...');
+      setError(null);
+      console.log('복지 서비스 데이터 불러오는 중...', { page });
       
-      // 실제 API 호출 대신 더미 데이터 사용 (개발 단계)
-      // const response = await axios.get('/api/welfare', {
-      //   params: { category: selectedCategory }
-      // });
+      const response = await getWelfareServices('', page, pagination.limit);
       
-      // 더미 데이터
-      const dummyData = [
-        {
-          id: '1',
-          title: '기초연금',
-          description: '만 65세 이상 어르신들의 안정된 노후생활을 위한 기초연금 지원',
-          category: '생계',
-          targetAudience: ['65세 이상', '저소득층'],
-          eligibilityCriteria: '만 65세 이상, 소득인정액 선정기준액 이하',
-          benefitDetails: '월 최대 30만원 지원',
-          applicationMethod: '주민센터 또는 복지로 홈페이지에서 신청',
-          provider: '보건복지부'
-        },
-        {
-          id: '2',
-          title: '청년월세 특별지원',
-          description: '코로나19로 어려움을 겪는 청년층의 주거비 부담 완화를 위한 지원',
-          category: '주거',
-          targetAudience: ['19~34세', '무주택자'],
-          eligibilityCriteria: '19~34세, 부모 합산 연소득 6천만원 이하, 월세 60만원 이하',
-          benefitDetails: '월 최대 20만원, 최대 12개월 지원',
-          applicationMethod: '주민센터 또는 복지로 홈페이지에서 신청',
-          provider: '국토교통부'
-        },
-        {
-          id: '3',
-          title: '의료급여',
-          description: '생활이 어려운 사람에게 의료비를 지원하여 국민 보건 향상과 사회복지 증진에 기여',
-          category: '의료',
-          targetAudience: ['기초생활수급자', '차상위계층'],
-          eligibilityCriteria: '국민기초생활보장법에 의한 수급자',
-          benefitDetails: '진찰, 검사, 약제, 치료, 입원, 간호 등 의료서비스 지원',
-          applicationMethod: '주민센터에서 신청',
-          provider: '보건복지부'
-        },
-        {
-          id: '4',
-          title: '문화누리카드',
-          description: '소외계층에게 문화예술, 국내여행, 체육활동 등의 문화복지 지원',
-          category: '문화',
-          targetAudience: ['기초생활수급자', '차상위계층'],
-          eligibilityCriteria: '6세 이상 기초생활수급자 및 차상위계층',
-          benefitDetails: '1인당 연간 최대 10만원 지원',
-          applicationMethod: '주민센터 또는 문화누리카드 홈페이지에서 신청',
-          provider: '문화체육관광부'
-        }
-      ];
+      console.log('복지 서비스 응답:', response);
       
-      // 카테고리 필터링 (더미 데이터용)
-      let filteredData = dummyData;
-      if (selectedCategory) {
-        filteredData = dummyData.filter(service => service.category === selectedCategory);
+      if (response.success) {
+        // 서비스 데이터와 함께 페이지네이션 정보도 저장
+        setServices(response.data);
+        setPagination({
+          page: response.pagination.page,
+          limit: response.pagination.limit,
+          total: response.pagination.total,
+          pages: response.pagination.pages
+        });
+      } else {
+        setError('서비스 데이터를 불러오는데 실패했습니다.');
       }
       
-      // 1초 지연 (로딩 시뮬레이션)
-      setTimeout(() => {
-        console.log('복지 서비스 데이터 로드 완료:', filteredData);
-        setServices(filteredData);
-        setLoading(false);
-      }, 1000);
-      
+      setLoading(false);
     } catch (error) {
       console.error('복지 서비스 데이터 로드 오류:', error);
       setError('복지 서비스를 불러오는 중 오류가 발생했습니다.');
@@ -108,75 +68,26 @@ const WelfareServices = () => {
     
     try {
       setLoading(true);
+      setError(null);
       console.log('복지 서비스 검색 중...', searchTerm);
       
-      // 실제 API 호출 대신 더미 데이터 검색 (개발 단계)
-      // const response = await axios.get('/api/welfare/search', {
-      //   params: { keyword: searchTerm }
-      // });
+      const response = await searchWelfareServices(searchTerm, 1, pagination.limit);
       
-      // 더미 데이터 검색
-      const dummyData = [
-        {
-          id: '1',
-          title: '기초연금',
-          description: '만 65세 이상 어르신들의 안정된 노후생활을 위한 기초연금 지원',
-          category: '생계',
-          targetAudience: ['65세 이상', '저소득층'],
-          eligibilityCriteria: '만 65세 이상, 소득인정액 선정기준액 이하',
-          benefitDetails: '월 최대 30만원 지원',
-          applicationMethod: '주민센터 또는 복지로 홈페이지에서 신청',
-          provider: '보건복지부'
-        },
-        {
-          id: '2',
-          title: '청년월세 특별지원',
-          description: '코로나19로 어려움을 겪는 청년층의 주거비 부담 완화를 위한 지원',
-          category: '주거',
-          targetAudience: ['19~34세', '무주택자'],
-          eligibilityCriteria: '19~34세, 부모 합산 연소득 6천만원 이하, 월세 60만원 이하',
-          benefitDetails: '월 최대 20만원, 최대 12개월 지원',
-          applicationMethod: '주민센터 또는 복지로 홈페이지에서 신청',
-          provider: '국토교통부'
-        },
-        {
-          id: '3',
-          title: '의료급여',
-          description: '생활이 어려운 사람에게 의료비를 지원하여 국민 보건 향상과 사회복지 증진에 기여',
-          category: '의료',
-          targetAudience: ['기초생활수급자', '차상위계층'],
-          eligibilityCriteria: '국민기초생활보장법에 의한 수급자',
-          benefitDetails: '진찰, 검사, 약제, 치료, 입원, 간호 등 의료서비스 지원',
-          applicationMethod: '주민센터에서 신청',
-          provider: '보건복지부'
-        },
-        {
-          id: '4',
-          title: '문화누리카드',
-          description: '소외계층에게 문화예술, 국내여행, 체육활동 등의 문화복지 지원',
-          category: '문화',
-          targetAudience: ['기초생활수급자', '차상위계층'],
-          eligibilityCriteria: '6세 이상 기초생활수급자 및 차상위계층',
-          benefitDetails: '1인당 연간 최대 10만원 지원',
-          applicationMethod: '주민센터 또는 문화누리카드 홈페이지에서 신청',
-          provider: '문화체육관광부'
-        }
-      ];
+      console.log('복지 서비스 검색 응답:', response);
       
-      // 검색어 필터링 (더미 데이터용)
-      const searchResults = dummyData.filter(service => 
-        service.title.includes(searchTerm) || 
-        service.description.includes(searchTerm) ||
-        service.targetAudience.some(target => target.includes(searchTerm))
-      );
+      if (response.success) {
+        setServices(response.data);
+        setPagination({
+          page: response.pagination.page,
+          limit: response.pagination.limit,
+          total: response.pagination.total,
+          pages: response.pagination.pages
+        });
+      } else {
+        setError('서비스 검색에 실패했습니다.');
+      }
       
-      // 1초 지연 (로딩 시뮬레이션)
-      setTimeout(() => {
-        console.log('복지 서비스 검색 완료:', searchResults);
-        setServices(searchResults);
-        setLoading(false);
-      }, 1000);
-      
+      setLoading(false);
     } catch (error) {
       console.error('복지 서비스 검색 오류:', error);
       setError('복지 서비스 검색 중 오류가 발생했습니다.');
@@ -184,156 +95,280 @@ const WelfareServices = () => {
     }
   };
   
-  // 서비스 상세 보기
-  const handleServiceClick = (service) => {
-    console.log('서비스 상세 보기:', service);
-    setActiveService(service);
+  // 페이지 변경 처리
+  const handlePageChange = (newPage) => {
+    if (searchTerm.trim()) {
+      // 검색 중일 때는 검색 결과에서 페이지만 변경
+      handleSearchWithPage(newPage);
+    } else {
+      // 일반 목록 조회
+      fetchServices(newPage);
+    }
   };
   
-  // 상세 보기 닫기
-  const handleCloseDetail = () => {
-    setActiveService(null);
+  // 페이지 번호와 함께 검색
+  const handleSearchWithPage = async (page) => {
+    try {
+      setLoading(true);
+      
+      const response = await searchWelfareServices(searchTerm, page, pagination.limit);
+      
+      if (response.success) {
+        setServices(response.data);
+        setPagination({
+          page: response.pagination.page,
+          limit: response.pagination.limit,
+          total: response.pagination.total,
+          pages: response.pagination.pages
+        });
+      } else {
+        setError('서비스 검색에 실패했습니다.');
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('복지 서비스 검색 오류:', error);
+      setError('복지 서비스 검색 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
+  };
+  
+  // 복지 데이터 동기화 (관리자용)
+  const handleSyncData = async () => {
+    try {
+      setSyncing(true);
+      setSuccess(null);
+      setError(null);
+      
+      const response = await syncWelfareServices();
+      
+      if (response.success) {
+        setSuccess(`복지 서비스 동기화가 완료되었습니다. ${response.stats?.added || 0}건 추가, ${response.stats?.updated || 0}건 업데이트됨.`);
+        // 동기화 후 첫 페이지 다시 불러오기
+        fetchServices(1);
+      } else {
+        setError('복지 서비스 동기화에 실패했습니다.');
+      }
+      
+      setSyncing(false);
+    } catch (error) {
+      console.error('복지 서비스 동기화 오류:', error);
+      setError('복지 서비스 동기화 중 오류가 발생했습니다.');
+      setSyncing(false);
+    }
+  };
+  
+  // 상세 페이지로 이동
+  const navigateToDetailPage = (serviceId) => {
+    navigate(`/welfare-services/${serviceId}`);
+  };
+  
+  // 페이지네이션 렌더링
+  const renderPagination = () => {
+    const items = [];
+    
+    // 이전 페이지 버튼
+    items.push(
+      <Pagination.Prev 
+        key="prev" 
+        disabled={pagination.page === 1}
+        onClick={() => handlePageChange(pagination.page - 1)}
+      />
+    );
+    
+    // 처음 페이지
+    if (pagination.page > 2) {
+      items.push(
+        <Pagination.Item 
+          key={1}
+          onClick={() => handlePageChange(1)}
+        >
+          1
+        </Pagination.Item>
+      );
+      
+      if (pagination.page > 3) {
+        items.push(<Pagination.Ellipsis key="ellipsis1" />);
+      }
+    }
+    
+    // 현재 페이지 주변 페이지
+    for (let i = Math.max(1, pagination.page - 1); i <= Math.min(pagination.pages, pagination.page + 1); i++) {
+      items.push(
+        <Pagination.Item 
+          key={i}
+          active={i === pagination.page}
+          onClick={() => handlePageChange(i)}
+        >
+          {i}
+        </Pagination.Item>
+      );
+    }
+    
+    // 마지막 페이지
+    if (pagination.page < pagination.pages - 1) {
+      if (pagination.page < pagination.pages - 2) {
+        items.push(<Pagination.Ellipsis key="ellipsis2" />);
+      }
+      
+      items.push(
+        <Pagination.Item 
+          key={pagination.pages}
+          onClick={() => handlePageChange(pagination.pages)}
+        >
+          {pagination.pages}
+        </Pagination.Item>
+      );
+    }
+    
+    // 다음 페이지 버튼
+    items.push(
+      <Pagination.Next 
+        key="next" 
+        disabled={pagination.page === pagination.pages}
+        onClick={() => handlePageChange(pagination.page + 1)}
+      />
+    );
+    
+    return <Pagination>{items}</Pagination>;
   };
   
   return (
     <div className="page-container">
       <Header />
       
-      <div className="page-content">
-        <div className="page-header">
-          <button className="back-button" onClick={() => navigate('/')}>
-            <FaArrowLeft />
-          </button>
-          <h1>복지 서비스</h1>
-        </div>
-        
-        {error && <div className="error-message">{error}</div>}
-        
-        {/* 검색 및 필터 */}
-        <div className="search-filter-container">
-          <div className="search-container">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="복지 서비스 검색..."
-              className="search-input"
-            />
-            <button 
-              className="search-button"
-              onClick={handleSearch}
-            >
-              <FaSearch />
+      <Container className="py-4">
+        <div className="page-header d-flex justify-content-between align-items-center mb-4">
+          <div className="d-flex align-items-center">
+            <button className="back-button" onClick={() => navigate('/')}>
+              <FaArrowLeft />
             </button>
+            <h1 className="mb-0">복지 서비스</h1>
           </div>
           
-          <div className="category-filters">
-            <button 
-              className={`category-filter ${selectedCategory === '' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('')}
+          <div>
+            <Button 
+              variant="outline-primary" 
+              className="me-2"
+              onClick={() => window.print()}
+              title="인쇄하기"
             >
-              전체
-            </button>
-            <button 
-              className={`category-filter ${selectedCategory === '생계' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('생계')}
+              <FaPrint /> 인쇄
+            </Button>
+            
+            <Button 
+              variant="outline-primary" 
+              onClick={handleSyncData}
+              disabled={syncing}
+              title="복지 서비스 정보 업데이트"
             >
-              생계
-            </button>
-            <button 
-              className={`category-filter ${selectedCategory === '주거' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('주거')}
-            >
-              주거
-            </button>
-            <button 
-              className={`category-filter ${selectedCategory === '의료' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('의료')}
-            >
-              의료
-            </button>
-            <button 
-              className={`category-filter ${selectedCategory === '교육' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('교육')}
-            >
-              교육
-            </button>
-            <button 
-              className={`category-filter ${selectedCategory === '문화' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('문화')}
-            >
-              문화
-            </button>
+              <FaSync className={syncing ? 'fa-spin' : ''} /> {syncing ? '동기화 중...' : '최신 정보 가져오기'}
+            </Button>
           </div>
         </div>
         
-        {/* 복지 서비스 목록 */}
-        <div className="welfare-list">
-          {loading ? (
-            <div className="loading">복지 서비스를 불러오는 중...</div>
-          ) : services.length > 0 ? (
-            services.map(service => (
-              <WelfareItem 
-                key={service.id} 
-                service={service}
-                onClick={() => handleServiceClick(service)}
-              />
-            ))
-          ) : (
-            <div className="no-data">
-              검색 결과가 없습니다.
-            </div>
+        {error && (
+          <Alert variant="danger" onClose={() => setError(null)} dismissible>
+            {error}
+          </Alert>
+        )}
+        
+        {success && (
+          <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
+            {success}
+          </Alert>
+        )}
+        
+        {/* 검색 입력란 */}
+        <Card className="mb-4">
+          <Card.Body>
+            <Form onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+              <Form.Group className="mb-0">
+                <div className="d-flex">
+                  <Form.Control
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="찾고 계신 복지 서비스를 검색하세요..."
+                    className="me-2"
+                    size="lg"
+                  />
+                  <Button 
+                    variant="primary"
+                    type="submit"
+                    size="lg"
+                  >
+                    <FaSearch /> 검색
+                  </Button>
+                </div>
+              </Form.Group>
+            </Form>
+          </Card.Body>
+        </Card>
+        
+        {/* 안내 문구 */}
+        <div className="mb-4">
+          {!loading && (
+            <h4 className="text-center">
+              총 <strong>{pagination.total}</strong>개의 복지 서비스가 있습니다.
+              {searchTerm && (
+                <> "<strong>{searchTerm}</strong>" 검색 결과</>
+              )}
+            </h4>
           )}
         </div>
         
-        {/* 서비스 상세 모달 */}
-        {activeService && (
-          <div className="modal-backdrop">
-            <div className="service-detail-modal">
-              <div className="modal-header">
-                <h2>{activeService.title}</h2>
-                <button 
-                  className="close-button"
-                  onClick={handleCloseDetail}
-                >
-                  &times;
-                </button>
-              </div>
-              <div className="modal-content">
-                <div className="service-category">{activeService.category}</div>
-                <p className="service-description">{activeService.description}</p>
-                
-                <h3>대상</h3>
-                <ul className="target-audience">
-                  {activeService.targetAudience.map((target, index) => (
-                    <li key={index}>{target}</li>
-                  ))}
-                </ul>
-                
-                <h3>자격 요건</h3>
-                <p>{activeService.eligibilityCriteria}</p>
-                
-                <h3>혜택 내용</h3>
-                <p>{activeService.benefitDetails}</p>
-                
-                <h3>신청 방법</h3>
-                <p>{activeService.applicationMethod}</p>
-                
-                <h3>제공 기관</h3>
-                <p>{activeService.provider}</p>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  className="btn btn-primary"
-                  onClick={handleCloseDetail}
-                >
-                  닫기
-                </button>
+        {/* 로딩 상태 */}
+        {loading ? (
+          <div className="text-center py-5">
+            <Spinner animation="border" variant="primary" size="lg" />
+            <p className="mt-3 fs-5">복지 서비스를 불러오는 중...</p>
+          </div>
+        ) : services.length > 0 ? (
+          <>
+            {/* 서비스 목록 */}
+            <div className="mb-4">
+              <div className="welfare-list">
+                {services.map(service => (
+                  <WelfareItem 
+                    key={service._id || service.id} 
+                    service={service}
+                    onDetailClick={() => navigateToDetailPage(service._id || service.id)}
+                  />
+                ))}
               </div>
             </div>
-          </div>
+            
+            {/* 페이지네이션 */}
+            {pagination.pages > 1 && (
+              <div className="d-flex justify-content-center mb-4">
+                {renderPagination()}
+              </div>
+            )}
+          </>
+        ) : (
+          // 검색 결과가 없는 경우
+          <Card className="text-center py-5">
+            <Card.Body>
+              <p className="mb-3 fs-5">검색 결과가 없습니다.</p>
+              {searchTerm && (
+                <div className="mt-3">
+                  <Button 
+                    variant="outline-primary"
+                    onClick={() => {
+                      setSearchTerm('');
+                      fetchServices(1);
+                    }}
+                    size="lg"
+                  >
+                    모든 서비스 보기
+                  </Button>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
         )}
-      </div>
+      </Container>
     </div>
   );
 };

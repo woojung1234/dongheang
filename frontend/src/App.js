@@ -17,6 +17,7 @@ import BudgetRecommendation from './pages/BudgetRecommendation';
 import ChatbotPage from './pages/ChatbotPage'; // 새로 추가
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
+import WelfareServiceDetail from './pages/WelfareServiceDetail';
 
 // 컨텍스트
 import { AuthProvider } from './context/AuthContext';
@@ -53,6 +54,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/consumption-history" element={<ConsumptionHistory />} />
             <Route path="/welfare-services" element={<WelfareServices />} />
+            <Route path="/welfare-services/:id" element={<WelfareServiceDetail />} />
             <Route path="/spending-report" element={<SpendingReport />} />
             <Route path="/peer-comparison" element={<PeerComparison />} />
             <Route path="/spending-prediction" element={<SpendingPrediction />} />

@@ -1,0 +1,147 @@
+/* frontend/src/pages/WelfareServices.css */
+
+.welfare-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .welfare-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .category-filter {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    margin-right: 0.5rem;
+    border-radius: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+  }
+  
+  .category-filter.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+  
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+  }
+  
+  .service-detail-modal {
+    background-color: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    animation: modal-fade-in 0.3s ease;
+  }
+  
+  @keyframes modal-fade-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .modal-content {
+    padding: 1rem;
+    flex: 1;
+    overflow-y: auto;
+  }
+  
+  .modal-footer {
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+  }
+  
+  .close-button:hover {
+    color: #343a40;
+  }
+  
+  .service-category {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .target-audience {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+  }
+  
+  /* 고령자를 위한 추가 스타일 */
+  @media (min-width: 768px) {
+    .welfare-list .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .welfare-meta {
+      font-size: 1rem;
+    }
+    
+    .modal-content h3 {
+      margin-top: 1.5rem;
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+  }
+  
+  @media print {
+    .back-button, 
+    .search-filter-container, 
+    button:not(.welfare-item),
+    .modal-backdrop,
+    .header,
+    .footer {
+      display: none !important;
+    }
+    
+    .welfare-item {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    
+    .service-detail-modal {
+      position: static !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      max-height: none !important;
+      overflow: visible !important;
+      box-shadow: none !important;
+    }
+  }

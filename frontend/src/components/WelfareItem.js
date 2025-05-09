@@ -1,25 +1,32 @@
-import React from 'react';
-import { FaMoneyBillWave, FaHome, FaHospital, FaGraduationCap, FaMusic, FaBriefcase, FaEllipsisH } from 'react-icons/fa';
+// frontend/src/components/WelfareItem.js
 
-const WelfareItem = ({ service, onClick }) => {
-  // 카테고리에 맞는 아이콘 선택
-  const getCategoryIcon = (category) => {
+import React from 'react';
+import { Card, Badge } from 'react-bootstrap';
+import { FaMoneyBillWave, FaHome, FaHospital, FaGraduationCap, FaMusic, FaBriefcase } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import './WelfareItem.css'; // 새로운 CSS 파일 추가
+
+const WelfareItem = ({ service, onDetailClick }) => {
+  const navigate = useNavigate();
+  
+  // 카테고리에 맞는 아이콘과 색상 선택 (기타 카테고리 삭제)
+  const getCategoryInfo = (category) => {
     switch (category) {
       case '생계':
-        return <FaMoneyBillWave />;
+        return { icon: <FaMoneyBillWave className="me-2" />, color: 'success' };
       case '주거':
-        return <FaHome />;
+        return { icon: <FaHome className="me-2" />, color: 'primary' };
       case '의료':
-        return <FaHospital />;
+        return { icon: <FaHospital className="me-2" />, color: 'danger' };
       case '교육':
-        return <FaGraduationCap />;
+        return { icon: <FaGraduationCap className="me-2" />, color: 'warning' };
       case '문화':
-        return <FaMusic />;
+        return { icon: <FaMusic className="me-2" />, color: 'info' };
       case '고용':
-        return <FaBriefcase />;
-      case '기타':
+        return { icon: <FaBriefcase className="me-2" />, color: 'secondary' };
       default:
-        return <FaEllipsisH />;
+        // 기타 카테고리는 표시하지 않음
+        return { icon: null, color: 'light', visible: false };
     }
   };
   
@@ -30,21 +37,69 @@ const WelfareItem = ({ service, onClick }) => {
     return targets.slice(0, 2).join(', ') + (targets.length > 2 ? ' 외' : '');
   };
   
+  // 서비스명 가져오기
+  const getServiceTitle = () => {
+    return service.서비스명 || service.title || '서비스명 없음';
+  };
+  
+  // 서비스 요약 가져오기
+  const getServiceDescription = () => {
+    return service.서비스요약 || service.description || '서비스 설명 없음';
+  };
+  
+  // 카테고리 가져오기
+  const getCategory = () => {
+    return service.category || '';  // 기타 카테고리는 빈 문자열로 처리
+  };
+  
+  // 대상자 정보 가져오기
+  const getTargetAudience = () => {
+    return service.targetAudience || [];
+  };
+  
+  // 제공자 가져오기
+  const getProvider = () => {
+    return service.provider || service.소관부처명 || '정보 없음';
+  };
+  
+  const handleClick = () => {
+    if (onDetailClick) {
+      onDetailClick();
+    } else {
+      navigate(`/welfare-services/${service._id || service.id}`);
+    }
+  };
+  
+  const categoryInfo = getCategoryInfo(getCategory());
+  
   return (
-    <div className="welfare-item" onClick={onClick}>
-      <div className="category-icon">
-        {getCategoryIcon(service.category)}
-      </div>
-      <div className="welfare-details">
-        <div className="welfare-title">{service.title}</div>
-        <div className="welfare-description">{service.description}</div>
-        <div className="welfare-info">
-          <span className="welfare-category">{service.category}</span>
-          <span className="welfare-target">대상: {renderTargetAudience(service.targetAudience)}</span>
-          <span className="welfare-provider">제공: {service.provider}</span>
+    <Card className="welfare-item mb-3 shadow-sm hover-effect" onClick={handleClick}>
+      <Card.Body>
+        <div className="d-flex align-items-start">
+          {categoryInfo.visible !== false && (
+            <Badge bg={categoryInfo.color} className="me-3 p-2" style={{ fontSize: '1rem', minWidth: '80px', textAlign: 'center' }}>
+              {categoryInfo.icon}
+              {getCategory()}
+            </Badge>
+          )}
+          
+          <div className="flex-grow-1">
+            <h5 className="card-title fw-bold">{getServiceTitle()}</h5>
+            <p className="card-text text-muted">{getServiceDescription()}</p>
+            
+            <div className="welfare-meta mt-3 d-flex flex-wrap align-items-center">
+              <span className="me-3">
+                <strong>대상:</strong> {renderTargetAudience(getTargetAudience())}
+              </span>
+              
+              <span>
+                <strong>제공:</strong> {getProvider()}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </Card.Body>
+    </Card>
   );
 };
 

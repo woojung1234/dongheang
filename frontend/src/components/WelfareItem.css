@@ -1,0 +1,55 @@
+/* frontend/src/components/WelfareItem.css */
+
+.welfare-item {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border-left: 5px solid transparent;
+  }
+  
+  .welfare-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    border-left: 5px solid #007bff;
+    background-color: #f8f9fa;
+  }
+  
+  .welfare-item .card-title {
+    transition: color 0.3s ease;
+  }
+  
+  .welfare-item:hover .card-title {
+    color: #007bff;
+  }
+  
+  /* 고대비 모드에서도 호버 효과가 보이도록 설정 */
+  @media (prefers-contrast: more) {
+    .welfare-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+      border-left: 5px solid #000;
+      background-color: #f0f0f0;
+    }
+    
+    .welfare-item:hover .card-title {
+      color: #000;
+      text-decoration: underline;
+    }
+  }
+  
+  /* 애니메이션 효과 */
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+  }
+  
+  .welfare-item:active {
+    transform: translateY(0);
+    animation: pulse 0.3s forwards;
+  }
