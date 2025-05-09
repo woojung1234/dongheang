@@ -1,95 +1,459 @@
-.dashboard-card {
-    height: 100%;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    margin-bottom: 15px;
-  }
-  
-  .dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  }
-  
-  .dashboard-card .card-header {
+/* 전체 페이지 컨테이너 */
+.page-container {
+    padding: 16px;
+    padding-bottom: 80px; /* 하단 네비게이션 공간 */
+    max-width: 500px;
+    margin: 0 auto;
     background-color: #f8f9fa;
-    font-weight: 500;
+    min-height: 100vh;
   }
   
-  .budget-progress-container {
-    padding: 10px 0;
+  /* 로딩 화면 */
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
   }
   
-  .notification-item:hover {
-    background-color: #f8f9fa;
-    border-radius: 4px;
+  /* 대시보드 헤더 */
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
   }
   
-  .welfare-recommendations .recommendation-item {
-    border-left: 3px solid #0d6efd;
-    padding-left: 10px;
+  .user-greeting h2 {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    font-weight: 700;
+    color: #333;
   }
   
-  .welfare-recommendations .recommendation-item:hover {
-    background-color: #f8f9fa;
+  .user-greeting p {
+    font-size: 0.9rem;
+    color: #777;
+    margin: 0;
   }
   
-  .recent-chat .chat-preview {
-    border-left: 3px solid #0d6efd;
-  }
-  
-  /* 반응형 디자인 */
-  @media (max-width: 992px) {
-    .dashboard-card {
-      height: auto;
-      margin-bottom: 20px;
-    }
-  }
-  
-  /* 고령자를 위한 접근성 향상 */
-  .dashboard-card h5, 
-  .dashboard-card h6,
-  .dashboard-card .btn {
-    font-size: 1.1rem;
-  }
-  
-  .dashboard-card p, 
-  .dashboard-card span {
-    font-size: 1rem;
-  }
-  
-  .dashboard-card h2 {
-    font-size: 1.8rem;
-    font-weight: 600;
-  }
-  
-  /* 차트 툴팁 스타일링 */
-  .recharts-tooltip-wrapper {
-    font-size: 1.1rem;
-  }
-  
-  /* 버튼 크기 및 여백 조정 */
-  .card-body .btn {
-    padding: 0.5rem 1rem;
-  }
-  
-  /* 컬러 팔레트 */
-  .card-header {
-    color: #345995;
-  }
-  
-  .budget-labels {
+  .notification-bell {
+    font-size: 1.4rem;
+    position: relative;
     color: #444;
   }
   
-  /* 알림 타입별 색상 */
-  .badge.bg-budget {
-    background-color: #F9A826;
+  .notification-dot {
+    position: absolute;
+    top: 0;
+    right: -5px;
+    width: 8px;
+    height: 8px;
+    background-color: #FF6A3D;
+    border-radius: 50%;
   }
   
-  .badge.bg-welfare {
-    background-color: #3DB2FF;
+  /* 예산 카드 */
+  .budget-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
   
-  .badge.bg-spending {
-    background-color: #7B61FF;
+  .budget-title {
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 8px;
   }
+  
+  .budget-amount {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: #333;
+  }
+  
+  .progress-bar {
+    height: 8px;
+    background-color: #E9ECEF;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  
+  .progress-filled {
+    height: 100%;
+    border-radius: 10px;
+  }
+  
+  .progress-text {
+    font-size: 0.8rem;
+    color: #666;
+  }
+  
+  /* 퀵 액션 버튼 */
+  .quick-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+  }
+  
+  .action-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    border-radius: 12px;
+    padding: 15px 0;
+    width: 23%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .action-button svg {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: #FF6A3D;
+  }
+  
+  .action-button span {
+    font-size: 0.8rem;
+    color: #555;
+  }
+  
+  /* 섹션 헤더 */
+  .dashboard-section {
+    margin-bottom: 25px;
+  }
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .section-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+  
+  .view-all {
+    font-size: 0.9rem;
+    color: #FF6A3D;
+  }
+  
+  /* 카테고리 컨테이너 */
+  .categories-container {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    margin-bottom: 5px;
+  }
+  
+  .categories-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .category-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    height: 80px;
+    margin-right: 12px;
+    border-radius: 10px;
+    padding: 10px;
+  }
+  
+  .category-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+  }
+  
+  .category-name {
+    font-size: 0.8rem;
+    color: #333;
+  }
+  
+  /* 복지 서비스 카드 */
+  .welfare-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .welfare-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  
+  .welfare-title {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 5px;
+  }
+  
+  .welfare-discount {
+    font-size: 0.9rem;
+    color: #FF6A3D;
+    font-weight: 600;
+  }
+  
+  .welfare-arrow {
+    font-size: 1.5rem;
+    color: #ccc;
+  }
+  
+  /* 챗봇 배너 */
+  .chatbot-banner {
+    display: flex;
+    align-items: center;
+    background-color: #FFE8D6;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .chatbot-icon {
+    font-size: 2rem;
+    color: #FF6A3D;
+    margin-right: 15px;
+  }
+  
+  .chatbot-content h4 {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 5px;
+  }
+  
+  .chatbot-content p {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+  }
+  
+  /* 반응형 디자인 */
+  @media (max-width: 400px) {
+    .action-button {
+      padding: 10px 0;
+    }
+    
+    .action-button svg {
+      font-size: 1.3rem;
+    }
+    
+    .budget-amount {
+      font-size: 1.6rem;
+    }
+  }
+  
+  /* 고령 사용자를 위한 접근성 향상 */
+  @media (min-width: 768px) {
+    .page-container {
+      font-size: 1.1rem;
+    }
+    
+    .user-greeting h2 {
+      font-size: 1.7rem;
+    }
+    
+    .budget-amount {
+      font-size: 2rem;
+    }
+    
+    .action-button svg {
+      font-size: 1.7rem;
+    }
+    
+    .action-button span {
+      font-size: 0.9rem;
+    }
+    
+    .category-name {
+      font-size: 0.9rem;
+    }
+  }
+  /* Dashboard.css 중 복지 서비스 카드 부분 수정 */
+
+.welfare-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .welfare-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+  }
+  
+  .welfare-title {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  
+  .welfare-discount {
+    font-size: 0.9rem;
+    color: #FF6A3D;
+    font-weight: 600;
+  }
+  
+  .welfare-arrow {
+    font-size: 1.5rem;
+    color: #ccc;
+  }
+  
+  /* Badge 스타일 지정 */
+  .badge {
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+  
+  .badge.bg-success {
+    background-color: #2ecc71 !important;
+  }
+  
+  .badge.bg-warning {
+    background-color: #f39c12 !important;
+  }
+  /* Dashboard.css - 반응형 버튼 스타일 추가 */
+
+/* 모든 클릭 가능한 요소에 대한 공통 전환 효과 */
+.budget-card,
+.action-button,
+.category-item,
+.welfare-card,
+.chatbot-banner,
+.view-all,
+.notification-bell {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+/* 예산 카드 호버/터치 효과 */
+.budget-card:hover,
+.budget-card:active {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 퀵 액션 버튼 호버/터치 효과 */
+.action-button:hover,
+.action-button:active {
+  transform: translateY(-3px);
+  background-color: #f8f9fa;
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+/* 카테고리 아이템 호버/터치 효과 */
+.category-item:hover,
+.category-item:active {
+  transform: scale(1.05);
+}
+
+/* 복지 서비스 카드 호버/터치 효과 */
+.welfare-card:hover,
+.welfare-card:active {
+  transform: translateX(3px);
+  background-color: #f8f9fa;
+}
+
+.welfare-card:hover .welfare-arrow,
+.welfare-card:active .welfare-arrow {
+  color: #FF6A3D;
+  transform: translateX(3px);
+}
+
+/* 챗봇 배너 호버/터치 효과 */
+.chatbot-banner:hover,
+.chatbot-banner:active {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 전체보기 링크 호버/터치 효과 */
+.view-all:hover,
+.view-all:active {
+  color: #e84118;
+  text-decoration: underline;
+}
+
+/* 알림 벨 호버/터치 효과 */
+.notification-bell:hover,
+.notification-bell:active {
+  transform: scale(1.1);
+  color: #FF6A3D;
+}
+
+/* 액티브 상태 (터치 중) 스타일 - 모바일 중요 */
+.budget-card:active,
+.action-button:active,
+.category-item:active,
+.welfare-card:active,
+.chatbot-banner:active {
+  opacity: 0.85;
+}
+
+/* 포커스 효과 - 접근성을 위한 키보드 네비게이션 */
+.budget-card:focus,
+.action-button:focus,
+.category-item:focus,
+.welfare-card:focus,
+.chatbot-banner:focus,
+.view-all:focus,
+.notification-bell:focus {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}
+
+/* 터치 하이라이트 컬러 제거 (모바일) */
+.budget-card,
+.action-button,
+.category-item,
+.welfare-card,
+.chatbot-banner,
+.view-all,
+.notification-bell {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 활성 클릭 효과를 추가하기 위한 가상 요소 */
+@media (max-width: 768px) {
+  .budget-card:active::after,
+  .action-button:active::after,
+  .category-item:active::after,
+  .welfare-card:active::after,
+  .chatbot-banner:active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: inherit;
+  }
+}
