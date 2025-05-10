@@ -222,7 +222,7 @@ const PeerComparison = () => {
   
   return (
     <div className="page-container">
-      <Header />
+      
       
       <Container className="py-4">
         <div className="page-header d-flex justify-content-between align-items-center mb-4">

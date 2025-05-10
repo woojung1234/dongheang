@@ -246,7 +246,7 @@ const Notifications = () => {
 
   return (
     <div className="page-container">
-      <Header />
+     
       
       <div className="notifications-page">
         {/* 페이지 헤더 */}

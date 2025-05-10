@@ -150,7 +150,7 @@ const ChatbotPage = () => {
 
   return (
     <div className="page-container">
-      <Header />
+      
       
       <div className="page-content">
         <div className="page-header">
