@@ -1,6 +1,8 @@
+// ConsumptionHistory.js 파일을 수정
+
 // frontend/src/pages/ConsumptionHistory.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Card, Button, Form, Row, Col, Alert, Spinner, Modal, Badge, Table } from 'react-bootstrap';
 import { FaArrowLeft, FaPlus, FaEdit, FaTrash, FaCalendarAlt, FaFilter, FaSort, FaDownload } from 'react-icons/fa';
@@ -9,9 +11,11 @@ import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import './ConsumptionHistory.css';
+import AuthContext from '../context/AuthContext'; // 추가: AuthContext 가져오기
 
 const ConsumptionHistory = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext); // 추가: AuthContext에서 user 가져오기
   const [spendings, setSpendings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,8 +34,7 @@ const ConsumptionHistory = () => {
     card_tpbuz_nm_1: '소매/유통',
     description: '',
     ta_ymd: new Date(),
-    sex: 'M',
-    age: 5
+    userId: user?._id || '' // 추가: userId 필드 추가
   });
   
   // 필터 상태
@@ -40,15 +43,15 @@ const ConsumptionHistory = () => {
     endDate: '',
     card_tpbuz_nm_1: '',
     minAmount: '',
-    maxAmount: '',
-    age: '',
-    sex: ''
+    maxAmount: ''
   });
   
   // 소비 내역 불러오기
   useEffect(() => {
-    fetchSpendings();
-  }, []);
+    if (user) { // 사용자가 로그인된 경우만 실행
+      fetchSpendings();
+    }
+  }, [user]);
   
   const fetchSpendings = async () => {
     try {
@@ -56,20 +59,19 @@ const ConsumptionHistory = () => {
       setError(null);
       
       // 필터 매개변수 구성
-      const params = {};
+      const params = { userId: user?._id }; // 추가: userId 파라미터 추가
       if (filters.startDate) params.startDate = formatDateString(filters.startDate);
       if (filters.endDate) params.endDate = formatDateString(filters.endDate);
       if (filters.card_tpbuz_nm_1) params.card_tpbuz_nm_1 = filters.card_tpbuz_nm_1;
       if (filters.minAmount) params.minAmount = filters.minAmount;
       if (filters.maxAmount) params.maxAmount = filters.maxAmount;
-      if (filters.age) params.age = filters.age;
-      if (filters.sex) params.sex = filters.sex;
       
       // 정렬 매개변수 추가
       params.sortField = sortField;
       params.sortDirection = sortDirection;
       
-      const response = await axios.get('/api/spending', { params });
+      // 변경: API 엔드포인트를 /api/user-spending으로 변경
+      const response = await axios.get('/api/user-spending', { params });
       
       if (response.data.success) {
         setSpendings(response.data.data);
@@ -134,10 +136,12 @@ const ConsumptionHistory = () => {
       // API 요청 데이터 준비
       const spendingData = {
         ...newSpending,
+        userId: user._id, // 추가: 현재 로그인한 사용자 ID
         ta_ymd: formatDateForAPI(newSpending.ta_ymd)
       };
       
-      const response = await axios.post('/api/spending', spendingData);
+      // 변경: API 엔드포인트를 /api/user-spending으로 변경
+      const response = await axios.post('/api/user-spending', spendingData);
       
       if (response.data.success) {
         setSuccess('소비 내역이 추가되었습니다.');
@@ -146,8 +150,7 @@ const ConsumptionHistory = () => {
           card_tpbuz_nm_1: '소매/유통',
           description: '',
           ta_ymd: new Date(),
-          sex: 'M',
-          age: 5
+          userId: user._id  // 추가: userId 유지
         });
         setShowAddModal(false);
         fetchSpendings();
@@ -177,7 +180,8 @@ const ConsumptionHistory = () => {
         ta_ymd: formatDateForAPI(selectedSpending.ta_ymd)
       };
       
-      const response = await axios.put(`/api/spending/${selectedSpending._id}`, spendingData);
+      // 변경: API 엔드포인트를 /api/user-spending으로 변경
+      const response = await axios.put(`/api/user-spending/${selectedSpending._id}`, spendingData);
       
       if (response.data.success) {
         setSuccess('소비 내역이 수정되었습니다.');
@@ -197,7 +201,8 @@ const ConsumptionHistory = () => {
     try {
       setError(null);
       
-      const response = await axios.delete(`/api/spending/${selectedSpending._id}`);
+      // 변경: API 엔드포인트를 /api/user-spending으로 변경
+      const response = await axios.delete(`/api/user-spending/${selectedSpending._id}`);
       
       if (response.data.success) {
         setSuccess('소비 내역이 삭제되었습니다.');
@@ -225,9 +230,7 @@ const ConsumptionHistory = () => {
       endDate: '',
       card_tpbuz_nm_1: '',
       minAmount: '',
-      maxAmount: '',
-      age: '',
-      sex: ''
+      maxAmount: ''
     });
   };
   
@@ -360,9 +363,29 @@ const ConsumptionHistory = () => {
     return new Intl.NumberFormat('ko-KR').format(amount);
   };
   
+  // 사용자가 로그인되어 있지 않은 경우 처리
+  if (!user) {
+    return (
+      <Container className="py-4">
+        <Alert variant="warning">
+          <Alert.Heading>로그인이 필요합니다</Alert.Heading>
+          <p>
+            소비 내역을 관리하려면 로그인이 필요합니다. 
+            <Button 
+              variant="outline-primary" 
+              className="ms-2"
+              onClick={() => navigate('/login')}
+            >
+              로그인하기
+            </Button>
+          </p>
+        </Alert>
+      </Container>
+    );
+  }
+  
   return (
     <div className="page-container">
-      
       
       <Container className="py-4">
         <div className="page-header d-flex justify-content-between align-items-center mb-4">
@@ -370,7 +393,7 @@ const ConsumptionHistory = () => {
             <button className="back-button" onClick={() => navigate('/')}>
               <FaArrowLeft />
             </button>
-            <h1 className="mb-0">소비 내역</h1>
+            <h1 className="mb-0">내 소비 내역</h1>
           </div>
           
           <div>
@@ -419,7 +442,7 @@ const ConsumptionHistory = () => {
             <Card.Body>
               <h5 className="mb-3">검색 필터</h5>
               <Row className="g-3">
-                <Col md={6} lg={3}>
+                <Col md={6} lg={4}>
                   <Form.Group>
                     <Form.Label>시작일</Form.Label>
                     <DatePicker
@@ -433,7 +456,7 @@ const ConsumptionHistory = () => {
                   </Form.Group>
                 </Col>
                 
-                <Col md={6} lg={3}>
+                <Col md={6} lg={4}>
                   <Form.Group>
                     <Form.Label>종료일</Form.Label>
                     <DatePicker
@@ -448,7 +471,7 @@ const ConsumptionHistory = () => {
                   </Form.Group>
                 </Col>
                 
-                <Col md={6} lg={3}>
+                <Col md={6} lg={4}>
                   <Form.Group>
                     <Form.Label>카테고리</Form.Label>
                     <Form.Select 
@@ -470,40 +493,7 @@ const ConsumptionHistory = () => {
                   </Form.Group>
                 </Col>
                 
-                <Col md={6} lg={3}>
-                  <Form.Group>
-                    <Form.Label>연령대</Form.Label>
-                    <Form.Select 
-                      name="age"
-                      value={filters.age}
-                      onChange={handleFilterChange}
-                    >
-                      <option value="">전체</option>
-                      <option value="5">50대</option>
-                      <option value="6">60대</option>
-                      <option value="7">70대</option>
-                      <option value="8">80대</option>
-                      <option value="9">90대</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                
-                <Col md={6} lg={3}>
-                  <Form.Group>
-                    <Form.Label>성별</Form.Label>
-                    <Form.Select 
-                      name="sex"
-                      value={filters.sex}
-                      onChange={handleFilterChange}
-                    >
-                      <option value="">전체</option>
-                      <option value="M">남성</option>
-                      <option value="F">여성</option>
-                    </Form.Select>
-                  </Form.Group>
-                </Col>
-                
-                <Col md={6} lg={3}>
+                <Col md={6} lg={4}>
                   <Form.Group>
                     <Form.Label>최소 금액</Form.Label>
                     <Form.Control
@@ -516,7 +506,7 @@ const ConsumptionHistory = () => {
                   </Form.Group>
                 </Col>
                 
-                <Col md={6} lg={3}>
+                <Col md={6} lg={4}>
                   <Form.Group>
                     <Form.Label>최대 금액</Form.Label>
                     <Form.Control
@@ -529,7 +519,7 @@ const ConsumptionHistory = () => {
                   </Form.Group>
                 </Col>
                 
-                <Col md={6} lg={3} className="d-flex align-items-end">
+                <Col md={6} lg={4} className="d-flex align-items-end">
                   <div className="d-flex gap-2 w-100">
                     <Button 
                       variant="secondary"
@@ -633,7 +623,7 @@ const ConsumptionHistory = () => {
                 >
                   <FaPlus /> 소비 내역 추가하기
                 </Button>
-              </div>
+                </div>
             )}
           </Card.Body>
         </Card>
@@ -740,33 +730,6 @@ const ConsumptionHistory = () => {
                   placeholder="구매 내역이나 메모를 입력하세요"
                 />
               </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>성별</Form.Label>
-                <Form.Select
-                  name="sex"
-                  value={newSpending.sex}
-                  onChange={handleInputChange}
-                >
-                  <option value="M">남성</option>
-                  <option value="F">여성</option>
-                </Form.Select>
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>연령대</Form.Label>
-                <Form.Select
-                  name="age"
-                  value={newSpending.age}
-                  onChange={handleInputChange}
-                >
-                  <option value="5">50대</option>
-                  <option value="6">60대</option>
-                  <option value="7">70대</option>
-                  <option value="8">80대</option>
-                  <option value="9">90대</option>
-                </Form.Select>
-              </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
@@ -839,33 +802,6 @@ const ConsumptionHistory = () => {
                     onChange={handleSelectedInputChange}
                     placeholder="구매 내역이나 메모를 입력하세요"
                   />
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>성별</Form.Label>
-                  <Form.Select
-                    name="sex"
-                    value={selectedSpending.sex}
-                    onChange={handleSelectedInputChange}
-                  >
-                    <option value="M">남성</option>
-                    <option value="F">여성</option>
-                  </Form.Select>
-                </Form.Group>
-                
-                <Form.Group className="mb-3">
-                  <Form.Label>연령대</Form.Label>
-                  <Form.Select
-                    name="age"
-                    value={selectedSpending.age}
-                    onChange={handleSelectedInputChange}
-                  >
-                    <option value="5">50대</option>
-                    <option value="6">60대</option>
-                    <option value="7">70대</option>
-                    <option value="8">80대</option>
-                    <option value="9">90대</option>
-                  </Form.Select>
                 </Form.Group>
               </Form>
             )}

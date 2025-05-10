@@ -1,6 +1,6 @@
 // frontend/src/pages/PeerComparison.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Card, Button, Row, Col, Form, Spinner, Alert } from 'react-bootstrap';
 import { FaArrowLeft, FaPrint, FaInfoCircle } from 'react-icons/fa';
@@ -11,11 +11,12 @@ import {
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import Header from '../components/Header';
+import AuthContext from '../context/AuthContext'; // 추가: AuthContext 가져오기
 import './PeerComparison.css';
 
 const PeerComparison = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext); // 추가: AuthContext에서 user 가져오기
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
@@ -26,8 +27,10 @@ const PeerComparison = () => {
   const [selectedGender, setSelectedGender] = useState('M'); // 기본값 남성
   
   useEffect(() => {
-    fetchComparisonData();
-  }, [selectedDate, selectedAge, selectedGender]);
+    if (user) { // 사용자가 로그인한 경우에만 실행
+      fetchComparisonData();
+    }
+  }, [selectedDate, selectedAge, selectedGender, user]);
   
   // 동년배 비교 데이터 가져오기
   const fetchComparisonData = async () => {
@@ -36,9 +39,25 @@ const PeerComparison = () => {
       setError(null);
       
       const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth() + 1;
+      const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
       
-      const response = await axios.get(`/api/spending/comparison`, {
+      // 변경: 사용자 데이터는 user-spending/analysis에서 가져옴
+      const userAnalysisResponse = await axios.get(`/api/user-spending/analysis`, {
+        params: {
+          userId: user._id,
+          year,
+          month
+        }
+      });
+      
+      if (!userAnalysisResponse.data.success) {
+        setError('사용자 소비 분석 데이터를 불러오는데 실패했습니다.');
+        setLoading(false);
+        return;
+      }
+      
+      // 기존 비교군 데이터 API 호출
+      const peerResponse = await axios.get(`/api/spending/comparison`, {
         params: {
           year,
           month,
@@ -47,12 +66,38 @@ const PeerComparison = () => {
         }
       });
       
-      if (response.data.success) {
-        setComparisonData(response.data.data);
-      } else {
+      if (!peerResponse.data.success) {
         setError('동년배 비교 데이터를 불러오는데 실패했습니다.');
+        setLoading(false);
+        return;
       }
       
+      // 두 데이터 소스를 합쳐서 결과 생성
+      const userData = userAnalysisResponse.data.data;
+      const peerData = peerResponse.data.data;
+      
+      // 결과 데이터 구성
+      const combinedData = {
+        userSpending: userData.userSpending,
+        peerAverage: peerData.peerAverage,
+        difference: userData.userSpending - peerData.peerAverage,
+        categoryComparison: userData.categoryComparison.map(userCat => {
+          // 동일한 카테고리 찾기
+          const peerCat = peerData.categoryComparison.find(
+            peer => peer.category === userCat.category
+          ) || { peerAmount: 0 };
+          
+          return {
+            category: userCat.category,
+            userAmount: userCat.userAmount,
+            peerAmount: peerCat.peerAmount,
+            difference: userCat.userAmount - peerCat.peerAmount
+          };
+        }),
+        userInfo: userData.userInfo
+      };
+      
+      setComparisonData(combinedData);
       setLoading(false);
     } catch (error) {
       console.error('동년배 비교 데이터 로딩 오류:', error);
@@ -220,9 +265,29 @@ const PeerComparison = () => {
     );
   };
   
+  // 사용자가 로그인되어 있지 않은 경우 처리
+  if (!user) {
+    return (
+      <Container className="py-4">
+        <Alert variant="warning">
+          <Alert.Heading>로그인이 필요합니다</Alert.Heading>
+          <p>
+            소비 내역을 비교하려면 로그인이 필요합니다. 
+            <Button 
+              variant="outline-primary" 
+              className="ms-2"
+              onClick={() => navigate('/login')}
+            >
+              로그인하기
+            </Button>
+          </p>
+        </Alert>
+      </Container>
+    );
+  }
+  
   return (
     <div className="page-container">
-      
       
       <Container className="py-4">
         <div className="page-header d-flex justify-content-between align-items-center mb-4">
@@ -372,7 +437,7 @@ const PeerComparison = () => {
                 <Card.Body>
                   <Row>
                     {comparisonData.categoryComparison.filter(item => 
-                      (item.userAmount || 0) > (item.peerAmount || 0) * 1.2
+                      (item.userAmount || 0) > (item.peerAmount || 0) * 1.2 && item.peerAmount > 0
                     ).map((item, index) => (
                       <Col md={6} key={index} className="mb-3">
                         <Alert variant="warning" className="mb-0">

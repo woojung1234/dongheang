@@ -1,6 +1,7 @@
 // controllers/userSpendingController.js
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose'); // mongoose 추가
 const UserSpending = require('../models/UserSpending');
 const User = require('../models/User');
 const Spending = require('../models/Spending');
@@ -252,9 +253,10 @@ const getUserSpendingAnalysis = async (req, res) => {
     // 해당 월의 시작일과 종료일 계산
     let startDate, endDate;
     if (year && month) {
-      startDate = `${year}${month.padStart(2, '0')}01`;
+      const monthStr = month.toString().padStart(2, '0');
+      startDate = `${year}${monthStr}01`;
       const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-      endDate = `${year}${month.padStart(2, '0')}${lastDay}`;
+      endDate = `${year}${monthStr}${lastDay}`;
     }
     
     // 필터 조건 구성
@@ -403,15 +405,16 @@ const getUserMonthlyStats = async (req, res) => {
     }
     
     // 해당 월의 시작일과 종료일 계산
-    const startDate = `${year}${month.padStart(2, '0')}01`;
+    const monthStr = month.toString().padStart(2, '0');
+    const startDate = `${year}${monthStr}01`;
     const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-    const endDate = `${year}${month.padStart(2, '0')}${lastDay}`;
+    const endDate = `${year}${monthStr}${lastDay}`;
     
     // 월 총 지출 통계
     const monthlyTotal = await UserSpending.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId), // 수정: 올바른 ObjectId 사용
           ta_ymd: { $gte: startDate, $lte: endDate }
         }
       },
@@ -428,7 +431,7 @@ const getUserMonthlyStats = async (req, res) => {
     const categorySummary = await UserSpending.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId), // 수정: 올바른 ObjectId 사용
           ta_ymd: { $gte: startDate, $lte: endDate }
         }
       },
@@ -458,7 +461,7 @@ const getUserMonthlyStats = async (req, res) => {
     const dailySummary = await UserSpending.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId), // 수정: 올바른 ObjectId 사용
           ta_ymd: { $gte: startDate, $lte: endDate }
         }
       },
@@ -524,7 +527,7 @@ const getUserDashboardStats = async (req, res) => {
     // 전체 소비 금액
     const totalSpending = await UserSpending.aggregate([
       {
-        $match: { userId: mongoose.Types.ObjectId(userId) }
+        $match: { userId: new mongoose.Types.ObjectId(userId) } // 수정: 올바른 ObjectId 사용
       },
       {
         $group: {
@@ -539,7 +542,7 @@ const getUserDashboardStats = async (req, res) => {
     // 상위 5개 업종
     const topCategories = await UserSpending.aggregate([
       {
-        $match: { userId: mongoose.Types.ObjectId(userId) }
+        $match: { userId: new mongoose.Types.ObjectId(userId) } // 수정: 올바른 ObjectId 사용
       },
       {
         $group: {
@@ -573,7 +576,7 @@ const getUserDashboardStats = async (req, res) => {
     const monthlyTrend = await UserSpending.aggregate([
       {
         $match: {
-          userId: mongoose.Types.ObjectId(userId),
+          userId: new mongoose.Types.ObjectId(userId), // 수정: 올바른 ObjectId 사용
           ta_ymd: { $gte: threeMonthsAgoStr + '01', $lte: currentMonthStr + '31' }
         }
       },

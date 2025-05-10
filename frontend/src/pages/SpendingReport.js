@@ -1,6 +1,6 @@
 // frontend/src/pages/SpendingReport.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Card, Button, Row, Col, Form, Spinner, Alert, Tabs, Tab } from 'react-bootstrap';
 import { FaArrowLeft, FaPrint, FaDownload, FaChartPie, FaChartBar, FaChartLine, FaCalendarAlt } from 'react-icons/fa';
@@ -11,18 +11,20 @@ import {
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import Header from '../components/Header';
+import AuthContext from '../context/AuthContext'; // 추가: AuthContext 가져오기
 import './SpendingReport.css';
 
 const SpendingReport = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext); // 추가: AuthContext에서 user 가져오기
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [monthlyStats, setMonthlyStats] = useState(null);
   const [categoryStats, setCategoryStats] = useState(null);
+  const [activeTab, setActiveTab] = useState('monthly');
+  // 성별 통계와 연령별 통계는 비교군 데이터에 대한 것이므로 그대로 유지
   const [genderStats, setGenderStats] = useState(null);
   const [ageStats, setAgeStats] = useState(null);
-  const [activeTab, setActiveTab] = useState('monthly');
   
   // 날짜 필터
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -31,10 +33,14 @@ const SpendingReport = () => {
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6666', '#82ca9d', '#8dd1e1', '#a4de6c', '#d0ed57'];
   
   useEffect(() => {
-    fetchMonthlyStats();
-  }, [selectedDate]);
+    if (user) { // 사용자가 로그인한 경우에만 실행
+      fetchMonthlyStats();
+    }
+  }, [selectedDate, user]);
   
   useEffect(() => {
+    if (!user) return; // 사용자가 로그인하지 않은 경우 실행하지 않음
+    
     if (activeTab === 'category' && !categoryStats) {
       fetchCategoryStats();
     } else if (activeTab === 'gender' && !genderStats) {
@@ -42,19 +48,24 @@ const SpendingReport = () => {
     } else if (activeTab === 'age' && !ageStats) {
       fetchAgeStats();
     }
-  }, [activeTab, categoryStats, genderStats, ageStats]);
+  }, [activeTab, categoryStats, genderStats, ageStats, user]);
   
-  // 월별 통계 가져오기
+  // 월별 통계 가져오기 - 사용자별 데이터로 변경
   const fetchMonthlyStats = async () => {
     try {
       setLoading(true);
       setError(null);
       
       const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth() + 1;
+      const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
       
-      const response = await axios.get(`/api/spending/stats/monthly`, {
-        params: { year, month }
+      // 변경: API 엔드포인트를 /api/user-spending/stats/monthly로 변경
+      const response = await axios.get(`/api/user-spending/stats/monthly`, {
+        params: { 
+          userId: user._id,
+          year, 
+          month 
+        }
       });
       
       if (response.data.success) {
@@ -71,16 +82,31 @@ const SpendingReport = () => {
     }
   };
   
-  // 카테고리별 통계 가져오기
+  // 카테고리별 통계 가져오기 - 사용자별 데이터로 변경
   const fetchCategoryStats = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get('/api/spending/stats/category');
+      // 변경: API 엔드포인트를 /api/user-spending/dashboard로 변경
+      const response = await axios.get('/api/user-spending/dashboard', {
+        params: { userId: user._id }
+      });
       
       if (response.data.success) {
-        setCategoryStats(response.data.data);
+        // topCategories를 allCategories 형식으로 변환
+        const categories = response.data.data.topCategories.map(cat => ({
+          category: cat.category,
+          totalSpent: cat.totalSpent,
+          count: cat.count,
+          avgSpent: Math.round(cat.totalSpent / cat.count),
+          percentage: Math.round((cat.totalSpent / response.data.data.totalSpending.total) * 100)
+        }));
+        
+        setCategoryStats({
+          allCategories: categories,
+          topCategories: categories.map(cat => cat.category)
+        });
       } else {
         setError('카테고리별 통계를 불러오는데 실패했습니다.');
       }
@@ -93,7 +119,7 @@ const SpendingReport = () => {
     }
   };
   
-  // 성별 통계 가져오기
+  // 성별 통계 가져오기 - 비교군 데이터 그대로 사용
   const fetchGenderStats = async () => {
     try {
       setLoading(true);
@@ -115,7 +141,7 @@ const SpendingReport = () => {
     }
   };
   
-  // 연령별 통계 가져오기
+  // 연령별 통계 가져오기 - 비교군 데이터 그대로 사용
   const fetchAgeStats = async () => {
     try {
       setLoading(true);
@@ -343,9 +369,29 @@ const SpendingReport = () => {
     );
   };
   
+  // 사용자가 로그인되어 있지 않은 경우 처리
+  if (!user) {
+    return (
+      <Container className="py-4">
+        <Alert variant="warning">
+          <Alert.Heading>로그인이 필요합니다</Alert.Heading>
+          <p>
+            소비 리포트를 보려면 로그인이 필요합니다. 
+            <Button 
+              variant="outline-primary" 
+              className="ms-2"
+              onClick={() => navigate('/login')}
+            >
+              로그인하기
+            </Button>
+          </p>
+        </Alert>
+      </Container>
+    );
+  }
+  
   return (
     <div className="page-container">
-      
       
       <Container className="py-4">
         <div className="page-header d-flex justify-content-between align-items-center mb-4">
@@ -353,7 +399,7 @@ const SpendingReport = () => {
             <button className="back-button" onClick={() => navigate('/')}>
               <FaArrowLeft />
             </button>
-            <h1 className="mb-0">소비 리포트</h1>
+            <h1 className="mb-0">내 소비 리포트</h1>
           </div>
           
           <div>
@@ -444,7 +490,9 @@ const SpendingReport = () => {
                             <h6 className="text-muted">건당 평균 금액</h6>
                             <h2>
                               {formatCurrency(
-                                Math.round(monthlyStats.totalSpending / monthlyStats.transactionCount)
+                                monthlyStats.transactionCount > 0 
+                                  ? Math.round(monthlyStats.totalSpending / monthlyStats.transactionCount)
+                                  : 0
                               )}원
                             </h2>
                           </div>
@@ -533,8 +581,6 @@ const SpendingReport = () => {
               <>
                 {renderGenderStatsChart()}
                 
-                // frontend/src/pages/SpendingReport.js (계속)
-
                 <Card>
                   <Card.Header>
                     <h5 className="mb-0">성별 지출 상세 분석</h5>
