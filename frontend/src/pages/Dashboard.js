@@ -14,13 +14,44 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [welfareServices, setWelfareServices] = useState([]);
   const [error, setError] = useState(null);
+<<<<<<< HEAD
+=======
+  const [userName, setUserName] = useState('홍길동'); // 기본 사용자 이름
+>>>>>>> feature
   
   // 대시보드 데이터 로드
   useEffect(() => {
     fetchDashboardData();
     fetchWelfareServices();
+<<<<<<< HEAD
   }, []);
   
+=======
+    fetchUserProfile();
+  }, []);
+  
+  // 사용자 프로필 정보 가져오기
+  const fetchUserProfile = async () => {
+    try {
+      // 로그인 상태 확인 및 사용자 정보 가져오기
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        const response = await axios.get('/api/users/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data.success && response.data.data) {
+          setUserName(response.data.data.name || '사용자');
+        }
+      }
+    } catch (error) {
+      console.log('사용자 정보 가져오기 실패:', error);
+      // 오류가 발생해도 기본 이름 유지
+    }
+  };
+  
+>>>>>>> feature
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -49,7 +80,14 @@ const Dashboard = () => {
       console.error('대시보드 데이터 로딩 오류:', error);
       setError('데이터를 불러오는 중 오류가 발생했습니다.');
       
+<<<<<<< HEAD
       // 오류 발생 시 임시 데이터 설정 (실제 서비스에서는 제거)
+=======
+      // 오류 발생 시 더미 데이터 설정
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      
+>>>>>>> feature
       setDashboardData({
         spending: {
           totalSpending: 485000,
@@ -58,8 +96,13 @@ const Dashboard = () => {
           topCategory: { category: '식비', amount: 125000 }
         },
         monthlyStats: {
+<<<<<<< HEAD
           year: new Date().getFullYear(),
           month: new Date().getMonth() + 1,
+=======
+          year: currentYear,
+          month: currentMonth,
+>>>>>>> feature
           totalSpending: 485000,
           categorySummary: [
             { category: '식비', total: 125000, percentage: 25.8 },
@@ -79,6 +122,7 @@ const Dashboard = () => {
     try {
       const response = await axios.get('/api/welfare');
       
+<<<<<<< HEAD
       if (response.data.success && response.data.data) {
         // API 응답에서 서비스 목록 추출
         const services = response.data.data.services || [];
@@ -103,6 +147,37 @@ const Dashboard = () => {
             title: '노인 일자리 지원', 
             badge: '인기', 
             summary: '최대 70만원' 
+=======
+      if (response.data.success && response.data.data && Array.isArray(response.data.data)) {
+        // 실제 API 응답 사용
+        setWelfareServices(response.data.data.slice(0, 3));
+      } else {
+        // 더미 데이터 사용
+        setWelfareServices([
+          { 
+            id: '1', 
+            서비스명: '노인 맞춤 돌봄 서비스', 
+            badge: 'NEW', 
+            서비스요약: '만 65세 이상 일상생활 영위가 어려운 취약노인에게 제공',
+            summary: '최대 월 58만원',
+            title: '노인 맞춤 돌봄 서비스'
+          },
+          { 
+            id: '2', 
+            서비스명: '어르신 교통비 지원', 
+            badge: '인기', 
+            서비스요약: '만 65세 이상 어르신에게 교통비 지원',
+            summary: '100% 할인',
+            title: '어르신 교통비 지원'
+          },
+          { 
+            id: '3', 
+            서비스명: '기초연금', 
+            badge: '', 
+            서비스요약: '만 65세 이상 어르신의 안정된 노후생활 지원',
+            summary: '최대 월 30만원',
+            title: '기초연금'
+>>>>>>> feature
           }
         ]);
       }
@@ -112,6 +187,7 @@ const Dashboard = () => {
       setWelfareServices([
         { 
           id: '1', 
+<<<<<<< HEAD
           title: '노인 맞춤 돌봄 서비스', 
           badge: 'NEW', 
           summary: '무료' 
@@ -127,6 +203,29 @@ const Dashboard = () => {
           title: '노인 일자리 지원', 
           badge: '인기', 
           summary: '최대 70만원' 
+=======
+          서비스명: '노인 맞춤 돌봄 서비스', 
+          badge: 'NEW', 
+          서비스요약: '만 65세 이상 일상생활 영위가 어려운 취약노인에게 제공',
+          summary: '최대 월 58만원',
+          title: '노인 맞춤 돌봄 서비스'
+        },
+        { 
+          id: '2', 
+          서비스명: '어르신 교통비 지원', 
+          badge: '인기', 
+          서비스요약: '만 65세 이상 어르신에게 교통비 지원',
+          summary: '100% 할인',
+          title: '어르신 교통비 지원'
+        },
+        { 
+          id: '3', 
+          서비스명: '기초연금', 
+          badge: '', 
+          서비스요약: '만 65세 이상 어르신의 안정된 노후생활 지원',
+          summary: '최대 월 30만원',
+          title: '기초연금'
+>>>>>>> feature
         }
       ]);
     }
@@ -156,14 +255,40 @@ const Dashboard = () => {
     );
   }
   
+<<<<<<< HEAD
   // 사용된 예산 비율 계산
+=======
+  // 사용된 예산 비율 계산 (예외 처리 강화)
+>>>>>>> feature
   const getBudgetPercentage = () => {
     if (!dashboardData || !dashboardData.spending) return 0;
     
     const { totalSpending, budget } = dashboardData.spending;
+<<<<<<< HEAD
     if (!budget || budget === 0) return 0;
     
     return Math.min(Math.round((totalSpending / budget) * 100), 100);
+=======
+    
+    // budget이 없거나 0인 경우에 대한 예외 처리
+    if (!budget || budget === 0) return 0;
+    
+    const spending = totalSpending || 0;
+    return Math.min(Math.round((spending / budget) * 100), 100);
+  };
+  
+  // 남은 금액 계산 (예외 처리 강화)
+  const getRemainingAmount = () => {
+    if (!dashboardData || !dashboardData.spending) return 0;
+    
+    const { totalSpending, budget } = dashboardData.spending;
+    
+    // budget이나 totalSpending이 없는 경우에 대한 예외 처리
+    const budgetAmount = budget || 0;
+    const spendingAmount = totalSpending || 0;
+    
+    return Math.max(budgetAmount - spendingAmount, 0);
+>>>>>>> feature
   };
   
   // 복지 서비스 배지 렌더링
@@ -181,7 +306,11 @@ const Dashboard = () => {
       {/* 상단 헤더 */}
       <div className="dashboard-header">
         <div className="user-greeting">
+<<<<<<< HEAD
           <h2>안녕하세요!</h2>
+=======
+          <h2>안녕하세요, {userName}님!</h2>
+>>>>>>> feature
           <p>오늘도 현명한 소비하세요!</p>
         </div>
         <div className="header-actions">
@@ -193,11 +322,19 @@ const Dashboard = () => {
       </div>
       
       {/* 예산 카드 */}
+<<<<<<< HEAD
       <div className="budget-card" onClick={() => navigate('/budget-recommendation')}>
         <div className="budget-info">
           <div className="budget-title">이번 달 예산</div>
           <div className="budget-amount">
             {dashboardData.spending && formatCurrency(dashboardData.spending.budget)}원
+=======
+      <div className="budget-card" onClick={() => navigate('/consumption')}>
+        <div className="budget-info">
+          <div className="budget-title">이번 달 예산</div>
+          <div className="budget-amount">
+            {formatCurrency(dashboardData.spending?.budget || 0)}원
+>>>>>>> feature
           </div>
           <div className="budget-spent">
             <div className="progress-bar">
@@ -210,8 +347,12 @@ const Dashboard = () => {
               ></div>
             </div>
             <div className="progress-text">
+<<<<<<< HEAD
               {getBudgetPercentage()}% 사용 · 남은 금액: 
               {dashboardData.spending && formatCurrency(dashboardData.spending.budget - dashboardData.spending.totalSpending)}원
+=======
+              {getBudgetPercentage()}% 사용 · 남은 금액: {formatCurrency(getRemainingAmount())}원
+>>>>>>> feature
             </div>
           </div>
         </div>
@@ -237,14 +378,23 @@ const Dashboard = () => {
         </div>
       </div>
       
+<<<<<<< HEAD
       {/* 카테고리 섹션 */}
+=======
+      {/* 카테고리별 소비 섹션 */}
+>>>>>>> feature
       <div className="dashboard-section">
         <div className="section-header">
           <h3>카테고리별 소비</h3>
           <span className="view-all" onClick={() => navigate('/reports')}>전체보기</span>
         </div>
         <div className="categories-container">
+<<<<<<< HEAD
           {dashboardData.monthlyStats && dashboardData.monthlyStats.categorySummary ? (
+=======
+          {dashboardData.monthlyStats && dashboardData.monthlyStats.categorySummary && 
+           dashboardData.monthlyStats.categorySummary.length > 0 ? (
+>>>>>>> feature
             // API에서 가져온 카테고리 정보 사용
             dashboardData.monthlyStats.categorySummary.map((category, index) => {
               const categoryInfo = categories.find(c => c.name === category.category) || categories[index % categories.length];
@@ -259,6 +409,10 @@ const Dashboard = () => {
                     {categoryInfo.icon}
                   </div>
                   <div className="category-name">{category.category}</div>
+<<<<<<< HEAD
+=======
+                  <div className="category-amount">{formatCurrency(category.total)}원</div>
+>>>>>>> feature
                 </div>
               );
             })
@@ -288,18 +442,33 @@ const Dashboard = () => {
           <span className="view-all" onClick={() => navigate('/welfare')}>전체보기</span>
         </div>
         <div className="welfare-cards">
+<<<<<<< HEAD
           {welfareServices.slice(0, 3).map((service, index) => (
             <div 
               key={service.id || index}
               className="welfare-card"
               onClick={() => navigate(`/welfare/${service.id}`)}
+=======
+          {welfareServices.map((service, index) => (
+            <div 
+              key={service.id || index}
+              className="welfare-card"
+              onClick={() => navigate(`/welfare-services/${service.id}`)}
+>>>>>>> feature
             >
               <div className="welfare-card-content">
                 <div className="welfare-title">
                   {renderBadge(service.badge)}
+<<<<<<< HEAD
                   {service.title}
                 </div>
                 <div className="welfare-discount">{service.summary}</div>
+=======
+                  {service.서비스명 || service.title}
+                </div>
+                <div className="welfare-summary">{service.서비스요약 || ''}</div>
+                <div className="welfare-discount">{service.summary || ''}</div>
+>>>>>>> feature
               </div>
               <div className="welfare-arrow">›</div>
             </div>

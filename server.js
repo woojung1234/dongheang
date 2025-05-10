@@ -7,6 +7,14 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const passport = require('./config/passport');
+<<<<<<< HEAD
+=======
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+
+// Swagger 문서 로드
+const swaggerDocument = YAML.load(path.join(__dirname, 'docs/swagger.yaml'));
+>>>>>>> feature
 
 // 미들웨어 가져오기
 const logger = require('./middleware/logger');
@@ -64,6 +72,16 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+<<<<<<< HEAD
+=======
+// Swagger UI 설정
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "동행앱 API 문서"
+}));
+
+>>>>>>> feature
 // API 라우트 설정
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -116,7 +134,13 @@ if (process.env.NODE_ENV !== 'development') {
 // 서버 시작
 app.listen(PORT, () => {
   logToFile(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+<<<<<<< HEAD
   console.log(`Server running on port ${PORT}`);
+=======
+  logToFile(`Swagger API 문서: http://localhost:${PORT}/api-docs`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Swagger API 문서: http://localhost:${PORT}/api-docs`);
+>>>>>>> feature
 });
 
 // 프로세스 종료 처리
@@ -130,4 +154,8 @@ process.on('unhandledRejection', (err) => {
 process.on('SIGTERM', () => {
   logToFile('SIGTERM 받음. 서버를 정상적으로 종료합니다.', 'INFO');
   process.exit(0);
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> feature

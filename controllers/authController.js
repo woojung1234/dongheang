@@ -24,6 +24,111 @@ const generateToken = (userId) => {
   });
 };
 
+<<<<<<< HEAD
+=======
+// 회원가입
+const register = async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이메일과 비밀번호는 필수입니다.' 
+      });
+    }
+    
+    // 이메일 중복 확인
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이미 등록된 이메일입니다.' 
+      });
+    }
+    
+    // 새 사용자 생성
+    const user = await User.create({
+      email,
+      password,
+      name: name || email.split('@')[0], // 이름이 없으면 이메일 앞부분 사용
+      profileImage: 'https://via.placeholder.com/150'
+    });
+    
+    logToFile(`새 사용자 등록: ${user._id}, 이메일: ${email}`);
+    
+    // 비밀번호 제외한 사용자 정보 반환
+    const userData = await User.findById(user._id).select('-password');
+    
+    // JWT 토큰 생성
+    const token = generateToken(user._id);
+    
+    res.status(201).json({
+      success: true,
+      token,
+      user: userData
+    });
+  } catch (error) {
+    logToFile(`회원가입 오류: ${error.message}`, 'ERROR');
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};
+
+// 일반 로그인
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '이메일과 비밀번호는 필수입니다.' 
+      });
+    }
+    
+    // 이메일로 사용자 찾기 (비밀번호 필드 포함)
+    const user = await User.findOne({ email }).select('+password');
+    
+    if (!user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '잘못된 이메일 또는 비밀번호입니다.' 
+      });
+    }
+    
+    // 비밀번호 확인
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ 
+        success: false, 
+        message: '잘못된 이메일 또는 비밀번호입니다.' 
+      });
+    }
+    
+    // 로그인 시간 업데이트
+    user.lastLogin = new Date();
+    await user.save();
+    
+    logToFile(`사용자 로그인: ${user._id}, 이메일: ${email}`);
+    
+    // JWT 토큰 생성
+    const token = generateToken(user._id);
+    
+    // 비밀번호 제외한 사용자 정보 반환
+    const userData = await User.findById(user._id).select('-password');
+    
+    res.json({
+      success: true,
+      token,
+      user: userData
+    });
+  } catch (error) {
+    logToFile(`로그인 오류: ${error.message}`, 'ERROR');
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};
+
+>>>>>>> feature
 // 카카오 로그인 콜백 처리
 const kakaoCallback = async (req, res) => {
   try {
@@ -110,6 +215,11 @@ const devLogin = async (req, res) => {
 };
 
 module.exports = {
+<<<<<<< HEAD
+=======
+  register,
+  login,
+>>>>>>> feature
   kakaoCallback,
   checkAuth,
   logout,

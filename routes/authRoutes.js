@@ -1,10 +1,23 @@
 const express = require('express');
 const passport = require('passport');
+<<<<<<< HEAD
 const { kakaoCallback, checkAuth, logout, devLogin } = require('../controllers/authController');
+=======
+const { register, login, kakaoCallback, checkAuth, logout, devLogin } = require('../controllers/authController');
+>>>>>>> feature
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
+<<<<<<< HEAD
+=======
+// 회원가입
+router.post('/register', register);
+
+// 일반 로그인
+router.post('/login', login);
+
+>>>>>>> feature
 // 카카오 로그인 시작
 router.get('/kakao', passport.authenticate('kakao'));
 
@@ -22,4 +35,8 @@ router.post('/logout', protect, logout);
 // 개발용 임시 로그인
 router.post('/dev-login', devLogin);
 
+<<<<<<< HEAD
 module.exports = router;
+=======
+module.exports = router;
+>>>>>>> feature

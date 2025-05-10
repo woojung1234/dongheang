@@ -1,17 +1,40 @@
+<<<<<<< HEAD
 body {
   margin: 0;
   font-family: 'Poppins', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+=======
+/* 노토 산스 KR 웹폰트 추가 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+/* 기본 스타일 초기화 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+>>>>>>> feature
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+<<<<<<< HEAD
   background-color: #F1F8E9;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath fill='%234caf50' fill-opacity='0.05' d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'%3E%3C/path%3E%3C/svg%3E");
+=======
+  background-color: #f8f9fa;
+  color: #333;
+  line-height: 1.5;
+>>>>>>> feature
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+<<<<<<< HEAD
   background-color: rgba(76, 175, 80, 0.1);
   padding: 2px 5px;
   border-radius: 4px;
@@ -25,10 +48,57 @@ code {
 
 ::-webkit-scrollbar-track {
   background: rgba(241, 248, 233, 0.7);
+=======
+}
+
+/* 버튼 기본 스타일 - 접근성 향상 */
+button {
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+button:focus {
+  outline: 3px solid rgba(255, 106, 61, 0.5);
+  outline-offset: 2px;
+}
+
+/* 폼 요소 기본 스타일 */
+input, textarea, select {
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 글로벌 링크 스타일 */
+a {
+  color: #FF6A3D;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: #E84118;
+}
+
+/* 고령자를 위한 글자 크기 조정 */
+@media (min-width: 768px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+>>>>>>> feature
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
+<<<<<<< HEAD
   background: linear-gradient(to bottom, #4CAF50, #8BC34A);
   border-radius: 10px;
 }
@@ -112,3 +182,18 @@ code {
 .grow-animation {
   animation: grow 1s ease-out forwards;
 }
+=======
+  background-color: #FF6A3D;
+  border-radius: 10px;
+}
+
+/* 사용자 선택 방지 - 모바일에서 누를 때 파란색 하이라이트 방지 */
+.no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+>>>>>>> feature
