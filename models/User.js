@@ -1,20 +1,12 @@
 const mongoose = require('mongoose');
-<<<<<<< HEAD
-=======
 const bcrypt = require('bcryptjs');
->>>>>>> feature
 
 const UserSchema = new mongoose.Schema({
   kakaoId: {
     type: String,
-<<<<<<< HEAD
-    required: true,
-    unique: true
-=======
     required: false,
     unique: true,
     sparse: true
->>>>>>> feature
   },
   email: {
     type: String,
@@ -22,14 +14,11 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
-<<<<<<< HEAD
-=======
   password: {
     type: String,
     required: false,
     select: false
   },
->>>>>>> feature
   name: {
     type: String,
     required: false
@@ -69,8 +58,6 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
-<<<<<<< HEAD
-=======
 // 비밀번호 해싱
 UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) {
@@ -92,7 +79,6 @@ UserSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
->>>>>>> feature
 // 업데이트 시 updatedAt 필드 자동 갱신
 UserSchema.pre('findOneAndUpdate', function() {
   this.set({ updatedAt: new Date() });

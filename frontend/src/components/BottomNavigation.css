@@ -1,51 +1,4 @@
 .bottom-navigation {
-<<<<<<< HEAD
-    display: flex;
-    justify-content: space-around;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: white;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    padding: 10px 0;
-    z-index: 1000;
-  }
-  
-  .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    cursor: pointer;
-    padding: 8px 0;
-    color: #888;
-    transition: all 0.2s ease;
-  }
-  
-  .nav-item.active {
-    color: #FF6A3D; /* 브랜드 메인 컬러 */
-    font-weight: 600;
-  }
-  
-  .nav-icon {
-    font-size: 1.5rem;
-    margin-bottom: 4px;
-  }
-  
-  .nav-label {
-    font-size: 0.8rem;
-  }
-  
-  @media (min-width: 768px) {
-    .bottom-navigation {
-      max-width: 500px;
-      left: 50%;
-      transform: translateX(-50%);
-      border-radius: 20px 20px 0 0;
-    }
-  }
-=======
   display: flex;
   justify-content: space-around;
   position: fixed;
@@ -155,4 +108,3 @@
     font-size: 1rem;
   }
 }
->>>>>>> feature

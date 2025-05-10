@@ -24,8 +24,6 @@ const generateToken = (userId) => {
   });
 };
 
-<<<<<<< HEAD
-=======
 // 회원가입
 const register = async (req, res) => {
   try {
@@ -128,7 +126,6 @@ const login = async (req, res) => {
   }
 };
 
->>>>>>> feature
 // 카카오 로그인 콜백 처리
 const kakaoCallback = async (req, res) => {
   try {
@@ -215,11 +212,8 @@ const devLogin = async (req, res) => {
 };
 
 module.exports = {
-<<<<<<< HEAD
-=======
   register,
   login,
->>>>>>> feature
   kakaoCallback,
   checkAuth,
   logout,
