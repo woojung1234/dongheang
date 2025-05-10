@@ -36,6 +36,14 @@ const UserSchema = new mongoose.Schema({
     enum: ['male', 'female', 'other', 'unspecified'],
     default: 'unspecified'
   },
+  region: {
+    type: String,
+    required: false
+  },
+  interests: {
+    type: [String],
+    default: []
+  },
   preferences: {
     type: Object,
     default: {}

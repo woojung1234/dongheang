@@ -24,10 +24,13 @@ const generateToken = (userId) => {
   });
 };
 
-// 회원가입
+// controllers/authController.js
 const register = async (req, res) => {
   try {
     const { email, password, name } = req.body;
+    
+    // 디버깅 로그 추가
+    console.log('회원가입 요청 데이터:', { email, name, passwordLength: password ? password.length : 0 });
     
     if (!email || !password) {
       return res.status(400).json({ 
@@ -49,7 +52,7 @@ const register = async (req, res) => {
     const user = await User.create({
       email,
       password,
-      name: name || email.split('@')[0], // 이름이 없으면 이메일 앞부분 사용
+      name: name || email.split('@')[0],
       profileImage: 'https://via.placeholder.com/150'
     });
     
@@ -67,8 +70,14 @@ const register = async (req, res) => {
       user: userData
     });
   } catch (error) {
+    // 더 자세한 오류 로깅
+    console.error('회원가입 상세 오류:', error);
     logToFile(`회원가입 오류: ${error.message}`, 'ERROR');
-    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    res.status(500).json({ 
+      success: false, 
+      message: '서버 오류가 발생했습니다.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
@@ -126,43 +135,6 @@ const login = async (req, res) => {
   }
 };
 
-// 카카오 로그인 콜백 처리
-const kakaoCallback = async (req, res) => {
-  try {
-    // 카카오 로그인 처리는 Passport-Kakao 미들웨어에서 이미 처리됨
-    // req.user에는 카카오에서 받은 프로필 정보가 들어있음
-    logToFile(`카카오 로그인 콜백: ${req.user.kakaoId}`);
-    
-    // 기존 사용자 조회 또는 새 사용자 생성
-    let user = await User.findOne({ kakaoId: req.user.kakaoId });
-    
-    if (!user) {
-      // 신규 사용자 생성
-      user = await User.create({
-        kakaoId: req.user.kakaoId,
-        email: req.user.email,
-        name: req.user.name,
-        profileImage: req.user.profileImage
-      });
-      logToFile(`신규 사용자 생성: ${user._id}`);
-    } else {
-      // 기존 사용자 로그인 시간 업데이트
-      user.lastLogin = new Date();
-      await user.save();
-      logToFile(`기존 사용자 로그인: ${user._id}`);
-    }
-    
-    // JWT 토큰 생성
-    const token = generateToken(user._id);
-    
-    // 클라이언트로 리다이렉트 (토큰 포함)
-    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
-  } catch (error) {
-    logToFile(`카카오 로그인 처리 오류: ${error.message}`, 'ERROR');
-    res.status(500).json({ success: false, message: '로그인 처리 중 오류가 발생했습니다.' });
-  }
-};
-
 // 로그인 상태 확인
 const checkAuth = async (req, res) => {
   res.json({ success: true, user: req.user });
@@ -193,7 +165,6 @@ const devLogin = async (req, res) => {
     if (!user) {
       // 개발용 테스트 사용자 생성
       user = await User.create({
-        kakaoId: `dev_${Date.now()}`,
         email,
         name: '테스트 사용자',
         profileImage: 'https://via.placeholder.com/150'
@@ -214,7 +185,6 @@ const devLogin = async (req, res) => {
 module.exports = {
   register,
   login,
-  kakaoCallback,
   checkAuth,
   logout,
   devLogin

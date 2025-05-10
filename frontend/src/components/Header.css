@@ -1,0 +1,104 @@
+.main-header {
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    cursor: pointer;
+  }
+  
+  .logo-icon {
+    font-size: 1.4rem;
+    margin-right: 8px;
+    color: var(--primary-color);
+  }
+  
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .user-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  
+  .logout-btn {
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+  }
+  
+  .logout-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: var(--primary-color);
+  }
+  
+  .icon {
+    font-size: 1rem;
+  }
+  
+  .login-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+  }
+  
+  .login-btn:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  @media (max-width: 480px) {
+    .header-content {
+      padding: 0 12px;
+    }
+    
+    .logo {
+      font-size: 1.1rem;
+    }
+    
+    .logo-icon {
+      font-size: 1.3rem;
+    }
+    
+    .user-name, .logout-btn, .login-btn {
+      font-size: 0.85rem;
+    }
+  }

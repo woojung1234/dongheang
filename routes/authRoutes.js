@@ -1,6 +1,5 @@
 const express = require('express');
-const passport = require('passport');
-const { register, login, kakaoCallback, checkAuth, logout, devLogin } = require('../controllers/authController');
+const { register, login, checkAuth, logout, devLogin } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -10,14 +9,6 @@ router.post('/register', register);
 
 // 일반 로그인
 router.post('/login', login);
-
-// 카카오 로그인 시작
-router.get('/kakao', passport.authenticate('kakao'));
-
-// 카카오 로그인 콜백
-router.get('/kakao/callback', 
-  passport.authenticate('kakao', { session: false, failureRedirect: '/' }),
-  kakaoCallback);
 
 // 로그인 상태 확인
 router.get('/check', protect, checkAuth);

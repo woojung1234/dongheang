@@ -1,0 +1,255 @@
+.register-profile-container {
+    display: flex;
+    justify-content: center;
+    padding: 30px 20px;
+    background-color: var(--background-color);
+    min-height: 100vh;
+  }
+  
+  .register-card {
+    width: 100%;
+    max-width: 500px;
+    background-color: white;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--card-shadow);
+    padding: 30px;
+  }
+  
+  .register-header {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  
+  .register-header h2 {
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+  }
+  
+  .register-header p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+  }
+  
+  .progress-bar {
+    height: 6px;
+    background-color: #e0e0e0;
+    border-radius: 3px;
+    margin-bottom: 30px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+  }
+  
+  .profile-form {
+    margin-bottom: 20px;
+  }
+  
+  .form-step {
+    animation: fadeIn 0.3s ease;
+  }
+  
+  .form-step h3 {
+    display: flex;
+    align-items: center;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    color: var(--text-color);
+  }
+  
+  .step-icon {
+    color: var(--primary-color);
+    margin-right: 10px;
+    font-size: 1.4rem;
+  }
+  
+  .form-group {
+    margin-bottom: 24px;
+  }
+  
+  .form-group label {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: var(--text-color);
+  }
+  
+  .input-icon {
+    margin-right: 8px;
+    color: var(--primary-color);
+  }
+  
+  .form-group input[type="text"],
+  .form-group input[type="number"],
+  .form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius-sm);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(255, 106, 61, 0.2);
+    outline: none;
+  }
+  
+  .radio-group,
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  
+  .radio-label,
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+  }
+  
+  .radio-label:hover,
+  .checkbox-label:hover {
+    background-color: #f5f5f5;
+  }
+  
+  .radio-label input,
+  .checkbox-label input {
+    margin-right: 8px;
+  }
+  
+  .checkbox-group {
+    flex-direction: column;
+  }
+  
+  .checkbox-label {
+    width: 100%;
+  }
+  
+  .checkbox-label.checked {
+    background-color: rgba(255, 106, 61, 0.1);
+    border-color: var(--primary-color);
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+  }
+  
+  .prev-btn,
+  .next-btn,
+  .submit-btn,
+  .skip-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .prev-btn {
+    background-color: #f5f5f5;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .prev-btn:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .next-btn,
+  .submit-btn {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  .next-btn:hover,
+  .submit-btn:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  .skip-btn {
+    background-color: transparent;
+    color: var(--text-light);
+    text-decoration: underline;
+    padding: 10px;
+  }
+  
+  .skip-btn:hover {
+    color: var(--primary-color);
+  }
+  
+  .submit-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .error-message {
+    background-color: #ffebee;
+    color: #d32f2f;
+    padding: 12px;
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .register-card {
+      padding: 20px;
+    }
+    
+    .register-header h2 {
+      font-size: 1.6rem;
+    }
+    
+    .form-step h3 {
+      font-size: 1.2rem;
+    }
+    
+    .form-actions {
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .prev-btn,
+    .next-btn,
+    .submit-btn {
+      width: 100%;
+    }
+    
+    .skip-btn {
+      text-align: center;
+      margin-top: 5px;
+    }
+  }

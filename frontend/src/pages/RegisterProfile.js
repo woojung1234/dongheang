@@ -1,24 +1,41 @@
-import React, { useContext, useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaCalendarAlt, FaVenusMars, FaMapMarkerAlt, FaPen, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaCalendarAlt, FaVenusMars, FaMapMarkerAlt, FaCheck, FaArrowLeft } from 'react-icons/fa';
 import AuthContext from '../context/AuthContext';
-import './ProfilePage.css';
+import './RegisterProfile.css';
 
-const ProfilePage = () => {
-  const { user, logout, updateProfile } = useContext(AuthContext);
+const RegisterProfile = () => {
+  const { isAuthenticated, user, updateProfile, loading: authLoading } = useContext(AuthContext);
   const navigate = useNavigate();
   
-  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    age: user?.age || '',
-    gender: user?.gender || 'unspecified',
-    region: user?.region || '',
-    interests: user?.interests || []
+    age: '',
+    gender: 'unspecified',
+    region: '',
+    interests: []
   });
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [step, setStep] = useState(1);
+  
+  // 비로그인 상태면 로그인 페이지로 리다이렉트
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+    
+    // 이미 프로필 정보가 있으면 불러오기
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        age: user.age || '',
+        gender: user.gender || 'unspecified',
+        region: user.region || '',
+        interests: user.interests || []
+      }));
+    }
+  }, [isAuthenticated, authLoading, user, navigate]);
   
   const regions = [
     '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
@@ -61,6 +78,14 @@ const ProfilePage = () => {
     }
   };
   
+  const nextStep = () => {
+    setStep(prev => prev + 1);
+  };
+  
+  const prevStep = () => {
+    setStep(prev => prev - 1);
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -70,7 +95,8 @@ const ProfilePage = () => {
       const result = await updateProfile(formData);
       
       if (result.success) {
-        setIsEditing(false);
+        // 프로필 업데이트 성공 시 홈페이지로 이동
+        navigate('/');
       } else {
         setError(result.error || '프로필 업데이트에 실패했습니다.');
       }
@@ -82,36 +108,11 @@ const ProfilePage = () => {
     }
   };
   
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+  const handleSkip = () => {
+    navigate('/');
   };
   
-  const formatGender = (gender) => {
-    switch (gender) {
-      case 'male':
-        return '남성';
-      case 'female':
-        return '여성';
-      case 'other':
-        return '기타';
-      default:
-        return '입력 안함';
-    }
-  };
-  
-  const formatInterests = (interests) => {
-    if (!interests || interests.length === 0) {
-      return '설정된 관심 분야가 없습니다.';
-    }
-    
-    return interests.map(interest => {
-      const option = interestOptions.find(opt => opt.id === interest);
-      return option ? option.label : interest;
-    }).join(', ');
-  };
-  
-  if (!user) {
+  if (authLoading) {
     return (
       <div className="loading">
         <div className="spinner"></div>
@@ -121,55 +122,29 @@ const ProfilePage = () => {
   }
   
   return (
-    <div className="profile-page">
-      <div className="profile-container">
-        <div className="profile-header">
-          <h2>내 프로필</h2>
-          <div className="profile-actions">
-            {!isEditing ? (
-              <button 
-                className="edit-button"
-                onClick={() => setIsEditing(true)}
-              >
-                <FaPen /> 프로필 수정
-              </button>
-            ) : (
-              <button 
-                className="cancel-button"
-                onClick={() => setIsEditing(false)}
-              >
-                취소
-              </button>
-            )}
-            <button 
-              className="logout-button"
-              onClick={handleLogout}
-            >
-              <FaSignOutAlt /> 로그아웃
-            </button>
-          </div>
+    <div className="register-profile-container">
+      <div className="register-card">
+        <div className="register-header">
+          <h2>프로필 설정</h2>
+          <p>맞춤형 복지 혜택을 추천받기 위해 정보를 입력해주세요</p>
         </div>
         
         {error && <div className="error-message">{error}</div>}
         
-        <div className="profile-card">
-          {isEditing ? (
-            <form onSubmit={handleSubmit} className="profile-form">
-              <div className="form-group">
-                <label htmlFor="name">
-                  <FaUser className="input-icon" />
-                  이름
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="이름을 입력하세요"
-                  required
-                />
-              </div>
+        <div className="progress-bar">
+          <div 
+            className="progress-fill" 
+            style={{ width: `${(step / 3) * 100}%` }}
+          ></div>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="profile-form">
+          {step === 1 && (
+            <div className="form-step">
+              <h3>
+                <FaUser className="step-icon" />
+                기본 정보
+              </h3>
               
               <div className="form-group">
                 <label htmlFor="age">
@@ -237,6 +212,24 @@ const ProfilePage = () => {
                 </div>
               </div>
               
+              <div className="form-actions">
+                <button type="button" className="next-btn" onClick={nextStep}>
+                  다음
+                </button>
+                <button type="button" className="skip-btn" onClick={handleSkip}>
+                  건너뛰기
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {step === 2 && (
+            <div className="form-step">
+              <h3>
+                <FaMapMarkerAlt className="step-icon" />
+                거주 지역
+              </h3>
+              
               <div className="form-group">
                 <label htmlFor="region">
                   <FaMapMarkerAlt className="input-icon" />
@@ -257,8 +250,29 @@ const ProfilePage = () => {
                 </select>
               </div>
               
+              <div className="form-actions">
+                <button type="button" className="prev-btn" onClick={prevStep}>
+                  <FaArrowLeft /> 이전
+                </button>
+                <button type="button" className="next-btn" onClick={nextStep}>
+                  다음
+                </button>
+                <button type="button" className="skip-btn" onClick={handleSkip}>
+                  건너뛰기
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {step === 3 && (
+            <div className="form-step">
+              <h3>
+                <FaCheck className="step-icon" />
+                관심 분야
+              </h3>
+              
               <div className="form-group">
-                <label>관심 분야</label>
+                <label>관심 있는 복지 분야를 선택해주세요 (여러 개 선택 가능)</label>
                 <div className="checkbox-group">
                   {interestOptions.map(option => (
                     <label key={option.id} className="checkbox-label">
@@ -274,67 +288,27 @@ const ProfilePage = () => {
                 </div>
               </div>
               
-              <button
-                type="submit"
-                className="save-button"
-                disabled={loading}
-              >
-                {loading ? '저장 중...' : '저장'}
-              </button>
-            </form>
-          ) : (
-            <div className="profile-info">
-              <div className="info-item">
-                <FaUser className="info-icon" />
-                <div className="info-content">
-                  <span className="info-label">이름</span>
-                  <span className="info-value">{user.name || '이름이 설정되지 않았습니다.'}</span>
-                </div>
-              </div>
-              
-              <div className="info-item">
-                <FaCalendarAlt className="info-icon" />
-                <div className="info-content">
-                  <span className="info-label">나이</span>
-                  <span className="info-value">{user.age || '설정되지 않았습니다.'}</span>
-                </div>
-              </div>
-              
-              <div className="info-item">
-                <FaVenusMars className="info-icon" />
-                <div className="info-content">
-                  <span className="info-label">성별</span>
-                  <span className="info-value">{formatGender(user.gender)}</span>
-                </div>
-              </div>
-              
-              <div className="info-item">
-                <FaMapMarkerAlt className="info-icon" />
-                <div className="info-content">
-                  <span className="info-label">지역</span>
-                  <span className="info-value">{user.region || '설정되지 않았습니다.'}</span>
-                </div>
-              </div>
-              
-              <div className="info-item interests">
-                <div className="info-content">
-                  <span className="info-label">관심 분야</span>
-                  <span className="info-value">{formatInterests(user.interests)}</span>
-                </div>
-              </div>
-              
-              <div className="info-item">
-                <div className="info-content">
-                  <span className="info-label">이메일</span>
-                  <span className="info-value">{user.email}</span>
-                </div>
+              <div className="form-actions">
+                <button type="button" className="prev-btn" onClick={prevStep}>
+                  <FaArrowLeft /> 이전
+                </button>
+                <button
+                  type="submit"
+                  className="submit-btn"
+                  disabled={loading}
+                >
+                  {loading ? '저장 중...' : '완료'}
+                </button>
+                <button type="button" className="skip-btn" onClick={handleSkip}>
+                  건너뛰기
+                </button>
               </div>
             </div>
           )}
-        </div>
+        </form>
       </div>
     </div>
   );
 };
 
-export default ProfilePage;
+export default RegisterProfile;

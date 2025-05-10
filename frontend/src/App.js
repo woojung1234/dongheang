@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import BottomNavigation from './components/BottomNavigation';
+import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import ConsumptionHistory from './pages/ConsumptionHistory';
 import SpendingReport from './pages/SpendingReport';
@@ -9,12 +9,14 @@ import WelfareServiceDetail from './pages/WelfareServiceDetail';
 import ChatbotPage from './pages/ChatbotPage';
 import ProfilePage from './pages/ProfilePage';
 import Login from './pages/Login';
+import RegisterProfile from './pages/RegisterProfile';
 import Notifications from './pages/Notifications';
 import NotFound from './pages/NotFound';
 import PeerComparison from './pages/PeerComparison';
 import SpendingPrediction from './pages/SpendingPrediction';
 import BudgetRecommendation from './pages/BudgetRecommendation';
 import { AuthProvider } from './context/AuthContext';
+import BottomNavigation from './components/BottomNavigation';
 import './App.css';
 
 function App() {
@@ -22,8 +24,10 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="app-container">
+          <Header />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register-profile" element={<RegisterProfile />} />
             <Route path="/" element={<Dashboard />} />
             <Route path="/consumption" element={<ConsumptionHistory />} />
             <Route path="/reports" element={<SpendingReport />} />

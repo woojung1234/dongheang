@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import api from '../services/api'; // axios 대신 api 서비스 사용
+import api from '../services/api';
 
 const AuthContext = createContext();
 
@@ -22,7 +22,6 @@ export const AuthProvider = ({ children }) => {
       try {
         // 토큰 유효성 검증
         const response = await api.get('/api/auth/check');
-        // Authorization 헤더는 api 인터셉터에서 자동으로 추가됨
         
         if (response.data.success) {
           setIsAuthenticated(true);
@@ -76,44 +75,55 @@ export const AuthProvider = ({ children }) => {
   };
   
   // 회원가입
-  const register = async (email, password, name) => {
+  const register = async (userData) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.post('/api/auth/register', {
-        email,
-        password,
-        name
-      });
+      const response = await api.post('/api/auth/register', userData);
       
       if (response.data.success) {
-        return true;
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        setIsAuthenticated(true);
+        setUser(response.data.user);
+        return { success: true, user: response.data.user };
       } else {
         setError(response.data.message || '회원가입에 실패했습니다.');
-        return false;
+        return { success: false, error: response.data.message };
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || '회원가입 처리 중 오류가 발생했습니다.';
       setError(errorMessage);
       console.error('회원가입 오류:', error);
-      return false;
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
   };
   
-  // 로그아웃
+  // 로그아웃 - 개선된 버전
   const logout = async () => {
+    setLoading(true);
     try {
-      await api.post('/api/auth/logout');
+      // 백엔드에 로그아웃 요청 (선택적)
+      if (isAuthenticated) {
+        await api.post('/api/auth/logout');
+      }
     } catch (error) {
       console.error('로그아웃 오류:', error);
     } finally {
+      // 로컬 저장소 토큰 제거
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      
+      // 상태 초기화
       setIsAuthenticated(false);
       setUser(null);
+      setLoading(false);
+      
+      // 콘솔에 로그
+      console.log('로그아웃 완료: 모든 인증 정보가 삭제되었습니다.');
     }
   };
   
@@ -147,11 +157,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
   
-  // 카카오 로그인
-  const kakaoLogin = () => {
-    window.location.href = `${api.defaults.baseURL}/api/auth/kakao`;
-  };
-  
   // 사용자 프로필 업데이트
   const updateProfile = async (userData) => {
     setLoading(true);
@@ -159,21 +164,25 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await api.put('/api/users/profile', userData);
-      // Authorization 헤더는 api 인터셉터에서 자동으로 추가됨
       
       if (response.data.success) {
-        setUser(response.data.data);
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-        return true;
+        // 사용자 정보 업데이트
+        const updatedUser = response.data.data;
+        setUser(updatedUser);
+        
+        // 로컬 스토리지 사용자 정보 업데이트
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        return { success: true, user: updatedUser };
       } else {
         setError(response.data.message || '프로필 업데이트에 실패했습니다.');
-        return false;
+        return { success: false, error: response.data.message };
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || '프로필 업데이트 중 오류가 발생했습니다.';
       setError(errorMessage);
       console.error('프로필 업데이트 오류:', error);
-      return false;
+      return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
@@ -189,7 +198,6 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       devLogin,
-      kakaoLogin,
       updateProfile,
       setError
     }}>
