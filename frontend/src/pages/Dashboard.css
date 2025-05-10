@@ -1,0 +1,464 @@
+/* 전체 페이지 컨테이너 */
+.page-container {
+  padding: 16px;
+  padding-bottom: 80px; /* 하단 네비게이션 공간 */
+  max-width: 500px;
+  margin: 0 auto;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #333;
+}
+
+/* 로딩 화면 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #FF6A3D;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* 대시보드 헤더 */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.user-greeting h2 {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+  font-weight: 700;
+  color: #333;
+}
+
+.user-greeting p {
+  font-size: 0.95rem;
+  color: #777;
+  margin: 0;
+}
+
+.notification-bell {
+  font-size: 1.4rem;
+  position: relative;
+  color: #444;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-bell:hover {
+  color: #FF6A3D;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  background-color: #FF6A3D;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+/* 예산 카드 */
+.budget-card {
+  background-color: white;
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.budget-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.budget-title {
+  font-size: 1rem;
+  color: #777;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.budget-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: #333;
+}
+
+.progress-bar {
+  height: 10px;
+  background-color: #E9ECEF;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-filled {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease-out;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 퀵 액션 버튼 */
+.quick-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.action-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border-radius: 14px;
+  padding: 16px 0;
+  width: 23%;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.action-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.action-button svg {
+  font-size: 1.6rem;
+  margin-bottom: 10px;
+  color: #FF6A3D;
+}
+
+.action-button span {
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 500;
+}
+
+/* 섹션 헤더 */
+.dashboard-section {
+  margin-bottom: 26px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.view-all {
+  font-size: 0.9rem;
+  color: #FF6A3D;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-all:hover {
+  color: #E84118;
+  text-decoration: underline;
+}
+
+/* 카테고리 컨테이너 */
+.categories-container {
+  display: flex;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #FF6A3D #f0f0f0;
+}
+
+.categories-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.categories-container::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 20px;
+}
+
+.categories-container::-webkit-scrollbar-thumb {
+  background-color: #FF6A3D;
+  border-radius: 20px;
+}
+
+.category-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  height: 90px;
+  margin-right: 14px;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.category-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.category-icon {
+  font-size: 1.6rem;
+  margin-bottom: 10px;
+}
+
+.category-name {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+  text-align: center;
+}
+
+.category-amount {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* 복지 서비스 카드 */
+.welfare-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.welfare-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.welfare-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.welfare-card:hover .welfare-arrow {
+  color: #FF6A3D;
+  transform: translateX(3px);
+}
+
+.welfare-title {
+  font-size: 1.05rem;
+  color: #333;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.welfare-summary {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welfare-discount {
+  font-size: 0.95rem;
+  color: #FF6A3D;
+  font-weight: 600;
+}
+
+.welfare-arrow {
+  font-size: 1.8rem;
+  color: #ccc;
+  transition: all 0.2s ease;
+}
+
+/* 챗봇 배너 */
+.chatbot-banner {
+  display: flex;
+  align-items: center;
+  background-color: #FFECE0;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chatbot-banner:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  background-color: #FFE2D0;
+}
+
+.chatbot-icon {
+  font-size: 2.2rem;
+  color: #FF6A3D;
+  margin-right: 18px;
+  transition: all 0.3s ease;
+}
+
+.chatbot-banner:hover .chatbot-icon {
+  transform: scale(1.1);
+}
+
+.chatbot-content h4 {
+  font-size: 1.15rem;
+  color: #333;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.chatbot-content p {
+  font-size: 0.95rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Badge 스타일 지정 */
+.badge {
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+.badge.bg-success {
+  background-color: #2ecc71 !important;
+}
+
+.badge.bg-warning {
+  background-color: #f39c12 !important;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 400px) {
+  .action-button {
+    padding: 12px 0;
+  }
+  
+  .action-button svg {
+    font-size: 1.4rem;
+  }
+  
+  .budget-amount {
+    font-size: 1.8rem;
+  }
+  
+  .welfare-card {
+    padding: 16px;
+  }
+}
+
+/* 고령 사용자를 위한 접근성 향상 */
+@media (min-width: 768px) {
+  .page-container {
+    font-size: 1.1rem;
+  }
+  
+  .user-greeting h2 {
+    font-size: 1.8rem;
+  }
+  
+  .budget-amount {
+    font-size: 2.2rem;
+  }
+  
+  .action-button svg {
+    font-size: 1.8rem;
+  }
+  
+  .action-button span {
+    font-size: 1rem;
+  }
+  
+  .category-name {
+    font-size: 1rem;
+  }
+  
+  .welfare-title {
+    font-size: 1.2rem;
+  }
+  
+  .welfare-summary {
+    font-size: 0.95rem;
+  }
+  
+  .welfare-discount {
+    font-size: 1.1rem;
+  }
+  
+  .chatbot-content h4 {
+    font-size: 1.3rem;
+  }
+  
+  .chatbot-content p {
+    font-size: 1.05rem;
+  }
+}
+
+/* 터치 하이라이트 컬러 제거 (모바일) */
+.budget-card,
+.action-button,
+.category-item,
+.welfare-card,
+.chatbot-banner,
+.view-all,
+.notification-bell {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 포커스 효과 - 접근성을 위한 키보드 네비게이션 */
+.budget-card:focus,
+.action-button:focus,
+.category-item:focus,
+.welfare-card:focus,
+.chatbot-banner:focus,
+.view-all:focus,
+.notification-bell:focus {
+  outline: 3px solid rgba(255, 106, 61, 0.5);
+  outline-offset: 2px;
+}

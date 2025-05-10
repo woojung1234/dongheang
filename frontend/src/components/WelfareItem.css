@@ -1,0 +1,108 @@
+.welfare-item {
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  border: none;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+.welfare-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+.welfare-item .card-title {
+  font-size: 1.15rem;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.welfare-item .card-text {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.5;
+}
+
+.welfare-meta {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.welfare-meta strong {
+  font-weight: 600;
+  color: #555;
+}
+
+/* 뱃지 스타일 */
+.welfare-item .badge {
+  font-weight: 500;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 카테고리별 색상 */
+.welfare-item .badge.bg-success {
+  background-color: #2ecc71 !important;
+}
+
+.welfare-item .badge.bg-primary {
+  background-color: #3498db !important;
+}
+
+.welfare-item .badge.bg-danger {
+  background-color: #e74c3c !important;
+}
+
+.welfare-item .badge.bg-warning {
+  background-color: #f39c12 !important;
+}
+
+.welfare-item .badge.bg-info {
+  background-color: #9b59b6 !important;
+}
+
+.welfare-item .badge.bg-secondary {
+  background-color: #34495e !important;
+}
+
+/* 터치/액티브 효과 */
+.welfare-item:active {
+  transform: translateY(0);
+  opacity: 0.9;
+}
+
+/* 접근성 포커스 효과 */
+.welfare-item:focus {
+  outline: 3px solid rgba(255, 106, 61, 0.5);
+  outline-offset: 2px;
+}
+
+/* 모바일 터치 하이라이트 제거 */
+.welfare-item {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 고령자를 위한 접근성 향상 */
+@media (min-width: 768px) {
+  .welfare-item .card-title {
+    font-size: 1.3rem;
+  }
+  
+  .welfare-item .card-text {
+    font-size: 1.05rem;
+  }
+  
+  .welfare-meta {
+    font-size: 0.95rem;
+  }
+  
+  .welfare-item .badge {
+    font-size: 1.1rem !important;
+  }
+}
