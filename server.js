@@ -33,6 +33,8 @@ const userRoutes = require('./routes/userRoutes');
 const welfareRoutes = require('./routes/welfareRoutes');
 const spendingRoutes = require('./routes/spendingRoutes');
 const chatbotRoutes = require('./routes/chatbotRoutes');
+const userSpendingRoutes = require('./routes/userSpendingRoutes');
+const categoryMappingRoutes = require('./routes/categoryMappingRoutes');
 
 // 익스프레스 앱 초기화
 const app = express();
@@ -64,6 +66,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(logger);
+
 
 // 세션 및 Passport 설정
 if (process.env.JWT_SECRET) {
@@ -116,6 +119,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/welfare', welfareRoutes);
 app.use('/api/spending', spendingRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/user-spending', userSpendingRoutes);
+app.use('/api/category-mapping', categoryMappingRoutes);
 
 // 정적 파일 제공 (프론트엔드 빌드)
 if (process.env.NODE_ENV === 'production') {
