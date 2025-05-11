@@ -462,3 +462,42 @@
   outline: 3px solid rgba(255, 106, 61, 0.5);
   outline-offset: 2px;
 }
+.budget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.budget-setting-btn {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.budget-setting-btn:hover {
+  background-color: #f5f5f5;
+  border-color: #999;
+  color: #333;
+}
+.budget-details {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.budget-spent-amount, .budget-remaining-amount {
+  flex: 1;
+}
+
+.budget-remaining-amount {
+  text-align: right;
+  font-weight: 500;
+}

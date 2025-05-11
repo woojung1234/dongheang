@@ -1,0 +1,9 @@
+/* frontend/src/components/BudgetSettingModal.css */
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.modal-footer .btn-outline-secondary {
+  margin-right: auto;
+}

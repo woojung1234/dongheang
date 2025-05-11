@@ -8,7 +8,7 @@ const Spending = require('../models/Spending');
 
 // 로깅 함수
 const logToFile = (message, level = 'INFO') => {
-  const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+  const timestamp = new Date().toISOString().replace(/T/, ' ').replace(/\\..+/, '');
   const logMessage = `[${level}] ${timestamp} - ${message}\n`;
   
   fs.appendFile(path.join(__dirname, '..', 'logs', 'app.log'), logMessage, (err) => {
@@ -676,6 +676,88 @@ const bulkAddUserSpendings = async (req, res) => {
   }
 };
 
+// 사용자의 카테고리별 소비 합계 조회
+const getCategorySpending = async (req, res) => {
+  try {
+    const { userId } = req.query;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: '사용자 ID는 필수 매개변수입니다.'
+      });
+    }
+    
+    // 현재 달의 시작일과 종료일 계산
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+    
+    const startDate = `${year}${month}01`;
+    const endDate = `${year}${month}${lastDay}`;
+    
+    // 카테고리별 소비 합계 조회
+    const categorySpending = await UserSpending.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+          ta_ymd: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$card_tpbuz_nm_1',
+          total: { $sum: '$total_spent' }
+        }
+      },
+      {
+       $sort: { total: -1 }
+      }
+    ]);
+    
+    // 카테고리 매핑
+    const categoryMapping = {
+      '음식': '음식',
+      '의료/건강': '의류/건강',
+      '공연/전시': '공연/전시',
+      '소매/유통': '의류/건강',
+      '생활서비스': '기타',
+      '미디어/통신': '기타',
+      '여가/오락': '공연/전시',
+      '학문/교육': '기타',
+      '공공/기업/단체': '기타'
+    };
+    
+    // 카테고리별 데이터 표준화
+    const standardCategories = {
+      '의류/건강': 0,
+      '공연/전시': 0,
+      '음식': 0
+    };
+    
+    // 카테고리별 총액 합산
+    categorySpending.forEach(item => {
+      const originalCategory = item._id || '';
+      const mappedCategory = categoryMapping[originalCategory] || '기타';
+      
+      if (standardCategories.hasOwnProperty(mappedCategory)) {
+        standardCategories[mappedCategory] += item.total;
+      }
+    });
+    
+    logToFile(`사용자 카테고리별 소비 조회 완료: 사용자 ID ${userId}`);
+    
+    res.json({
+      success: true,
+      data: standardCategories
+    });
+  } catch (error) {
+    logToFile(`사용자 카테고리별 소비 조회 오류: ${error.message}`, 'ERROR');
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};
+
 module.exports = {
   addUserSpending,
   getUserSpendingList,
@@ -685,5 +767,6 @@ module.exports = {
   getUserSpendingAnalysis,
   getUserMonthlyStats,
   getUserDashboardStats,
-  bulkAddUserSpendings
+  bulkAddUserSpendings,
+  getCategorySpending  // 새로 추가한 함수
 };

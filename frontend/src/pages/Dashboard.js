@@ -3,25 +3,44 @@ import { useNavigate } from 'react-router-dom';
 import { Spinner, Badge } from 'react-bootstrap';
 import { 
   FaWallet, FaChartPie, FaUsers, FaRobot, FaRegBell, 
-  FaUtensils, FaShoppingBag, FaBus, FaHospital, FaMusic
+  FaUtensils, FaShoppingBag, FaBus, FaHospital, FaMusic,
+  FaTshirt, FaTheaterMasks, FaHamburger
 } from 'react-icons/fa';
 import axios from 'axios';
 import './Dashboard.css';
+import BudgetSettingModal from '../components/BudgetSettingModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
+  const [categorySpending, setCategorySpending] = useState({
+    '의류/건강': 0,
+    '공연/전시': 0,
+    '음식': 0
+  });
   const [welfareServices, setWelfareServices] = useState([]);
   const [error, setError] = useState(null);
   const [userName, setUserName] = useState('홍길동'); // 기본 사용자 이름
+  const [userId, setUserId] = useState(null);
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [budget, setBudget] = useState(null);
+  const [monthlySpending, setMonthlySpending] = useState(0); // 이번 달 총 지출액
   
   // 대시보드 데이터 로드
   useEffect(() => {
-    fetchDashboardData();
-    fetchWelfareServices();
     fetchUserProfile();
   }, []);
+  
+  useEffect(() => {
+    if (userId) {
+      fetchDashboardData();
+      fetchCategorySpending();
+      fetchWelfareServices();
+      fetchBudget();
+      fetchMonthlySpending(); // 이번 달 총 지출액 가져오기
+    }
+  }, [userId]);
   
   // 사용자 프로필 정보 가져오기
   const fetchUserProfile = async () => {
@@ -36,11 +55,93 @@ const Dashboard = () => {
         
         if (response.data.success && response.data.data) {
           setUserName(response.data.data.name || '사용자');
+          setUserId(response.data.data._id);
         }
       }
     } catch (error) {
       console.log('사용자 정보 가져오기 실패:', error);
       // 오류가 발생해도 기본 이름 유지
+      // 개발용 더미 ID 설정
+      setUserId('dummy-user-id-for-development');
+    }
+  };
+  
+  // 예산 정보 가져오기
+  const fetchBudget = async () => {
+    if (!userId) return;
+    
+    try {
+      const response = await axios.get(`/api/budget/current?userId=${userId}`);
+      
+      if (response.data.success) {
+        setBudget(response.data.data);
+      }
+    } catch (error) {
+      console.error('예산 정보 로드 오류:', error);
+    }
+  };
+  
+  // 이번 달 총 지출액 가져오기
+  const fetchMonthlySpending = async () => {
+    if (!userId) return;
+    
+    try {
+      // 현재 연월 계산
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const monthStr = month.toString().padStart(2, '0');
+      
+      // 월의 시작일과 종료일
+      const startDate = `${year}-${monthStr}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${monthStr}-${lastDay}`;
+      
+      // 해당 기간의 사용자 지출 내역 가져오기
+      const response = await axios.get('/api/user-spending', {
+        params: {
+          userId,
+          startDate,
+          endDate,
+          limit: 1000 // 충분히 큰 값 설정
+        }
+      });
+      
+      if (response.data.success && response.data.data) {
+        // 총 지출액 계산
+        const totalSpent = response.data.data.reduce((total, item) => {
+          return total + (item.total_spent || 0);
+        }, 0);
+        
+        setMonthlySpending(totalSpent);
+      }
+    } catch (error) {
+      console.error('월간 지출 정보 로드 오류:', error);
+      // 오류 발생 시 대시보드 데이터의 값 사용
+      if (dashboardData && dashboardData.spending) {
+        setMonthlySpending(dashboardData.spending.totalSpending || 0);
+      }
+    }
+  };
+  
+  // 카테고리별 소비 데이터 가져오기
+  const fetchCategorySpending = async () => {
+    if (!userId) return;
+    
+    try {
+      const response = await axios.get(`/api/user-spending/categories?userId=${userId}`);
+      
+      if (response.data.success) {
+        setCategorySpending(response.data.data);
+      }
+    } catch (error) {
+      console.error('카테고리별 소비 데이터 조회 오류:', error);
+      // 오류 발생 시 하드코딩된 데이터 사용
+      setCategorySpending({
+        '의류/건강': 550000,
+        '공연/전시': 123416,
+        '음식': 15000
+      });
     }
   };
   
@@ -169,6 +270,13 @@ const Dashboard = () => {
     }
   };
   
+  // 예산 설정 성공 시 호출되는 함수
+  const handleBudgetSuccess = (newBudget) => {
+    setBudget(newBudget);
+    // 대시보드 데이터도 새로고침
+    fetchDashboardData();
+  };
+  
   // 금액 포맷팅
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return '0';
@@ -184,6 +292,13 @@ const Dashboard = () => {
     { id: 5, name: "문화", icon: <FaMusic />, color: "#9376E0" }
   ];
   
+  // 새로운 카테고리별 소비 아이콘 매핑
+  const categoryIcons = {
+    '의류/건강': { icon: <FaTshirt />, color: "#FF82A9" },
+    '공연/전시': { icon: <FaTheaterMasks />, color: "#9376E0" },
+    '음식': { icon: <FaHamburger />, color: "#FF6A3D" }
+  };
+  
   if (loading) {
     return (
       <div className="loading-container">
@@ -193,30 +308,65 @@ const Dashboard = () => {
     );
   }
   
+  // 총 지출액 계산 - API에서 가져온 값 또는 계산된 값 사용
+  const getTotalSpending = () => {
+    // 직접 API에서 가져온 이번 달 총 지출
+    if (monthlySpending > 0) {
+      return monthlySpending;
+    }
+    
+    // 대시보드 데이터의 총 지출 사용
+    if (dashboardData && dashboardData.spending && dashboardData.spending.totalSpending) {
+      return dashboardData.spending.totalSpending;
+    }
+    
+    // 카테고리별 지출 합계 계산
+    const categoryTotal = Object.values(categorySpending).reduce((total, amount) => total + amount, 0);
+    if (categoryTotal > 0) {
+      return categoryTotal;
+    }
+    
+    return 0;
+  };
+  
   // 사용된 예산 비율 계산 (예외 처리 강화)
   const getBudgetPercentage = () => {
+    const totalSpending = getTotalSpending();
+    
+    // 실제 예산 데이터 사용
+    if (budget && budget.amount > 0) {
+      return Math.min(Math.round((totalSpending / budget.amount) * 100), 100);
+    }
+    
+    // 기존 코드 (fallback)
     if (!dashboardData || !dashboardData.spending) return 0;
     
-    const { totalSpending, budget } = dashboardData.spending;
+    const { budget: dashboardBudget } = dashboardData.spending;
     
     // budget이 없거나 0인 경우에 대한 예외 처리
-    if (!budget || budget === 0) return 0;
+    if (!dashboardBudget || dashboardBudget === 0) return 0;
     
-    const spending = totalSpending || 0;
-    return Math.min(Math.round((spending / budget) * 100), 100);
+    return Math.min(Math.round((totalSpending / dashboardBudget) * 100), 100);
   };
   
   // 남은 금액 계산 (예외 처리 강화)
   const getRemainingAmount = () => {
+    const totalSpending = getTotalSpending();
+    
+    // 실제 예산 데이터 사용
+    if (budget && budget.amount > 0) {
+      return Math.max(budget.amount - totalSpending, 0);
+    }
+    
+    // 기존 코드 (fallback)
     if (!dashboardData || !dashboardData.spending) return 0;
     
-    const { totalSpending, budget } = dashboardData.spending;
+    const { budget: dashboardBudget } = dashboardData.spending;
     
     // budget이나 totalSpending이 없는 경우에 대한 예외 처리
-    const budgetAmount = budget || 0;
-    const spendingAmount = totalSpending || 0;
+    const budgetAmount = dashboardBudget || 0;
     
-    return Math.max(budgetAmount - spendingAmount, 0);
+    return Math.max(budgetAmount - totalSpending, 0);
   };
   
   // 복지 서비스 배지 렌더링
@@ -248,9 +398,28 @@ const Dashboard = () => {
       {/* 예산 카드 */}
       <div className="budget-card" onClick={() => navigate('/consumption')}>
         <div className="budget-info">
-          <div className="budget-title">이번 달 예산</div>
+          <div className="budget-header">
+            <div className="budget-title">이번 달 예산</div>
+            <button 
+              className="budget-setting-btn" 
+              onClick={(e) => {
+                e.stopPropagation(); // 예산 카드 클릭 이벤트 전파 방지
+                setShowBudgetModal(true);
+              }}
+            >
+              예산 설정
+            </button>
+          </div>
           <div className="budget-amount">
-            {formatCurrency(dashboardData.spending?.budget || 0)}원
+            {formatCurrency(budget?.amount || dashboardData?.spending?.budget || 0)}원
+          </div>
+          <div className="budget-details">
+            <div className="budget-spent-amount">
+              사용 금액: {formatCurrency(getTotalSpending())}원
+            </div>
+            <div className="budget-remaining-amount">
+              남은 금액: {formatCurrency(getRemainingAmount())}원
+            </div>
           </div>
           <div className="budget-spent">
             <div className="progress-bar">
@@ -263,7 +432,7 @@ const Dashboard = () => {
               ></div>
             </div>
             <div className="progress-text">
-              {getBudgetPercentage()}% 사용 · 남은 금액: {formatCurrency(getRemainingAmount())}원
+              {getBudgetPercentage()}% 사용됨
             </div>
           </div>
         </div>
@@ -289,49 +458,27 @@ const Dashboard = () => {
         </div>
       </div>
       
-      {/* 카테고리별 소비 섹션 */}
+      {/* 카테고리별 소비 섹션 - 새로운 구현 */}
       <div className="dashboard-section">
         <div className="section-header">
           <h3>카테고리별 소비</h3>
           <span className="view-all" onClick={() => navigate('/reports')}>전체보기</span>
         </div>
         <div className="categories-container">
-          {dashboardData.monthlyStats && dashboardData.monthlyStats.categorySummary && 
-           dashboardData.monthlyStats.categorySummary.length > 0 ? (
-            // API에서 가져온 카테고리 정보 사용
-            dashboardData.monthlyStats.categorySummary.map((category, index) => {
-              const categoryInfo = categories.find(c => c.name === category.category) || categories[index % categories.length];
-              return (
-                <div 
-                  key={index} 
-                  className="category-item"
-                  onClick={() => navigate('/reports')}
-                  style={{ backgroundColor: `${categoryInfo.color}15` }}
-                >
-                  <div className="category-icon" style={{ color: categoryInfo.color }}>
-                    {categoryInfo.icon}
-                  </div>
-                  <div className="category-name">{category.category}</div>
-                  <div className="category-amount">{formatCurrency(category.total)}원</div>
-                </div>
-              );
-            })
-          ) : (
-            // 기본 카테고리 표시
-            categories.map(category => (
-              <div 
-                key={category.id} 
-                className="category-item"
-                onClick={() => navigate('/reports')}
-                style={{ backgroundColor: `${category.color}15` }}
-              >
-                <div className="category-icon" style={{ color: category.color }}>
-                  {category.icon}
-                </div>
-                <div className="category-name">{category.name}</div>
+          {Object.keys(categorySpending).map((category) => (
+            <div 
+              key={category} 
+              className="category-item"
+              onClick={() => navigate('/reports')}
+              style={{ backgroundColor: `${categoryIcons[category].color}15` }}
+            >
+              <div className="category-icon" style={{ color: categoryIcons[category].color }}>
+                {categoryIcons[category].icon}
               </div>
-            ))
-          )}
+              <div className="category-name">{category}</div>
+              <div className="category-amount">{formatCurrency(categorySpending[category])}원</div>
+            </div>
+          ))}
         </div>
       </div>
       
@@ -372,6 +519,14 @@ const Dashboard = () => {
           <p>복지 서비스나 재정 관리에 대해 물어보세요!</p>
         </div>
       </div>
+      
+      {/* 예산 설정 모달 */}
+      <BudgetSettingModal 
+        show={showBudgetModal} 
+        onHide={() => setShowBudgetModal(false)} 
+        userId={userId}
+        onSuccess={handleBudgetSuccess}
+      />
     </div>
   );
 };

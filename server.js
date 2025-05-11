@@ -121,6 +121,8 @@ app.use('/api/spending', spendingRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/user-spending', userSpendingRoutes);
 app.use('/api/category-mapping', categoryMappingRoutes);
+// API 라우트 설정 부분에 추가
+app.use('/api/budget', require('./routes/budgetRoutes'));
 
 // 정적 파일 제공 (프론트엔드 빌드)
 if (process.env.NODE_ENV === 'production') {
