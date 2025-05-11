@@ -10,7 +10,8 @@ const {
   getUserMonthlyStats,
   getUserDashboardStats,
   bulkAddUserSpendings,
-  getCategorySpending  // 새로 추가
+  getCategorySpending,
+  comparePeerStatistics // 새로 추가
 } = require('../controllers/userSpendingController');
 
 const router = express.Router();
@@ -33,8 +34,11 @@ router.get('/stats/monthly', getUserMonthlyStats);
 // 사용자 대시보드 통계
 router.get('/dashboard', getUserDashboardStats);
 
-// 사용자 카테고리별 소비 (새로 추가)
+// 사용자 카테고리별 소비
 router.get('/categories', getCategorySpending);
+
+// 사용자와 동년배 통계 비교 (새로 추가)
+router.get('/compare-stats', comparePeerStatistics);
 
 // 특정 사용자 소비 데이터 조회
 router.get('/:id', getUserSpendingById);

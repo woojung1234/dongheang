@@ -1,7 +1,8 @@
-// controllers/userSpendingController.js
+// controllers/userSpendingController.js - 전체 코드
+
 const fs = require('fs');
 const path = require('path');
-const mongoose = require('mongoose'); // mongoose 추가
+const mongoose = require('mongoose');
 const UserSpending = require('../models/UserSpending');
 const User = require('../models/User');
 const Spending = require('../models/Spending');
@@ -697,7 +698,7 @@ const getCategorySpending = async (req, res) => {
     const startDate = `${year}${month}01`;
     const endDate = `${year}${month}${lastDay}`;
     
-    // 카테고리별 소비 합계 조회
+    // controllers/userSpendingController.js (계속)
     const categorySpending = await UserSpending.aggregate([
       {
         $match: {
@@ -758,6 +759,198 @@ const getCategorySpending = async (req, res) => {
   }
 };
 
+// 사용자와 동년배 데이터 비교 (새로 추가)
+const comparePeerStatistics = async (req, res) => {
+  try {
+    const { userId, year, month, age } = req.query;
+    
+    logToFile(`사용자와 동년배 통계 비교 요청: 사용자 ID ${userId}, 년도 ${year}, 월 ${month}`);
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: '사용자 ID는 필수 매개변수입니다.'
+      });
+    }
+    
+    // 사용자 정보 조회
+    const user = await User.findById(userId);
+    if (!user) {
+      logToFile(`사용자를 찾을 수 없음: ID ${userId}`, 'ERROR');
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.'
+      });
+    }
+    
+    // 사용자의 연령대 확인 (parameter로 받은 값 우선 사용)
+    const userAge = age ? parseInt(age) : Math.floor(user.age / 10);
+    const userGender = user.gender === 'male' ? 'M' : 'F';
+    
+    // 해당 월의 시작일과 종료일 계산
+    let startDate, endDate;
+    if (year && month) {
+      const monthStr = month.toString().padStart(2, '0');
+      startDate = `${year}${monthStr}01`;
+      const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+      endDate = `${year}${monthStr}${lastDay}`;
+    }
+    
+    // 1. 사용자 소비 데이터 집계 (UserSpending 모델 사용)
+    const userFilter = { userId: new mongoose.Types.ObjectId(userId) };
+    if (startDate && endDate) {
+      userFilter.ta_ymd = { $gte: startDate, $lte: endDate };
+    }
+    
+    const userSpendingByCategory = await UserSpending.aggregate([
+      { $match: userFilter },
+      { 
+        $group: {
+          _id: '$card_tpbuz_nm_1',
+          totalSpent: { $sum: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { totalSpent: -1 } }
+    ]);
+    
+    // 2. 동년배 소비 데이터 집계 (Spending 모델 사용)
+    // 연령대에 맞는 데이터 집계
+    const peerFilter = { 
+      age: userAge,
+      sex: userGender
+    };
+    
+    const peerSpendingByCategory = await Spending.aggregate([
+      { $match: peerFilter },
+      { 
+        $group: {
+          _id: '$card_tpbuz_nm_1',
+          totalSpent: { $sum: '$total_spent' },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { totalSpent: -1 } }
+    ]);
+    
+    // 3. 카테고리 매핑
+    const categoryMapping = {
+      '음식': '식비',
+      '의료/건강': '의료',
+      '공연/전시': '문화',
+      '소매/유통': '의류',
+      '생활서비스': '주거',
+      '미디어/통신': '교통',
+      '여가/오락': '문화',
+      '학문/교육': '기타',
+      '공공/기업/단체': '기타'
+    };
+    
+    // 4. 사용자 데이터 카테고리별 집계
+    let userCategoryData = {
+      '식비': { totalAmount: 0, count: 0 },
+      '교통': { totalAmount: 0, count: 0 },
+      '주거': { totalAmount: 0, count: 0 },
+      '의료': { totalAmount: 0, count: 0 },
+      '문화': { totalAmount: 0, count: 0 },
+      '의류': { totalAmount: 0, count: 0 },
+      '기타': { totalAmount: 0, count: 0 }
+    };
+    
+    userSpendingByCategory.forEach(item => {
+      const originalCategory = item._id || '';
+      const category = categoryMapping[originalCategory] || '기타';
+      
+      userCategoryData[category].totalAmount += item.totalSpent;
+      userCategoryData[category].count += item.count;
+    });
+    
+    // 5. 동년배 데이터 카테고리별 집계
+    let peerCategoryData = {
+      '식비': { totalAmount: 0, count: 0, avgAmount: 0 },
+      '교통': { totalAmount: 0, count: 0, avgAmount: 0 },
+      '주거': { totalAmount: 0, count: 0, avgAmount: 0 },
+      '의료': { totalAmount: 0, count: 0, avgAmount: 0 },
+      '문화': { totalAmount: 0, count: 0, avgAmount: 0 },
+      '의류': { totalAmount: 0, count: 0, avgAmount: 0 },
+      '기타': { totalAmount: 0, count: 0, avgAmount: 0 }
+    };
+    
+    peerSpendingByCategory.forEach(item => {
+      const originalCategory = item._id || '';
+      const category = categoryMapping[originalCategory] || '기타';
+      
+      peerCategoryData[category].totalAmount += item.totalSpent;
+      peerCategoryData[category].count += item.count;
+    });
+    
+    // 평균 금액 계산
+    Object.keys(peerCategoryData).forEach(category => {
+      if (peerCategoryData[category].count > 0) {
+        peerCategoryData[category].avgAmount = 
+          peerCategoryData[category].totalAmount / peerCategoryData[category].count;
+      }
+    });
+    
+    // 6. 카테고리별 비교 데이터 생성
+    const categoryComparison = Object.keys(userCategoryData).map(category => {
+      const userAmount = userCategoryData[category].totalAmount;
+      const peerAvgAmount = peerCategoryData[category].avgAmount;
+      
+      return {
+        category,
+        userAmount: Math.round(userAmount),
+        peerAmount: Math.round(peerAvgAmount),
+        difference: Math.round(userAmount - peerAvgAmount),
+        ratio: peerAvgAmount > 0 ? Math.round((userAmount / peerAvgAmount) * 100) : 0
+      };
+    }).filter(item => 
+      item.userAmount > 0 || item.peerAmount > 0
+    );
+    
+    // 7. 총합 계산
+    const userTotal = Object.values(userCategoryData)
+      .reduce((sum, item) => sum + item.totalAmount, 0);
+    
+    const peerAverage = Object.values(peerCategoryData)
+      .reduce((sum, item) => sum + item.avgAmount, 0);
+    
+    // 8. 결과 반환
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          userTotal: Math.round(userTotal),
+          peerAverage: Math.round(peerAverage),
+          difference: Math.round(userTotal - peerAverage)
+        },
+        categoryComparison,
+        userInfo: {
+          ageGroup: `${userAge * 10}대`,
+          gender: userGender === 'M' ? '남성' : '여성'
+        },
+        analysis: {
+          overspendingCategories: categoryComparison
+            .filter(item => item.userAmount > item.peerAmount * 1.2 && item.peerAmount > 0)
+            .map(item => ({
+              category: item.category,
+              suggestion: `동년배 평균보다 ${Math.round((item.userAmount / item.peerAmount - 1) * 100)}% 더 지출하고 있습니다.`
+            })),
+          underspendingCategories: categoryComparison
+            .filter(item => item.userAmount < item.peerAmount * 0.5 && item.peerAmount > 0)
+            .map(item => ({
+              category: item.category,
+              suggestion: `동년배 평균보다 크게 적게 지출하고 있습니다.`
+            }))
+        }
+      }
+    });
+  } catch (error) {
+    logToFile(`사용자와 동년배 통계 비교 오류: ${error.message}`, 'ERROR');
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+};
+
 module.exports = {
   addUserSpending,
   getUserSpendingList,
@@ -768,5 +961,6 @@ module.exports = {
   getUserMonthlyStats,
   getUserDashboardStats,
   bulkAddUserSpendings,
-  getCategorySpending  // 새로 추가한 함수
+  getCategorySpending,
+  comparePeerStatistics // 새로 추가한 함수
 };

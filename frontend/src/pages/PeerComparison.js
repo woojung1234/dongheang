@@ -1,5 +1,4 @@
 // frontend/src/pages/PeerComparison.js
-
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Card, Button, Row, Col, Form, Spinner, Alert } from 'react-bootstrap';
@@ -11,23 +10,23 @@ import {
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import AuthContext from '../context/AuthContext'; // 추가: AuthContext 가져오기
+import AuthContext from '../context/AuthContext';
 import './PeerComparison.css';
 
 const PeerComparison = () => {
   const navigate = useNavigate();
-  const { user } = useContext(AuthContext); // 추가: AuthContext에서 user 가져오기
+  const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   
   // 필터 상태
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedAge, setSelectedAge] = useState('5'); // 기본값 50대
-  const [selectedGender, setSelectedGender] = useState('M'); // 기본값 남성
+  const [selectedAge, setSelectedAge] = useState(user?.age ? Math.floor(user.age / 10).toString() : '5');
+  const [selectedGender, setSelectedGender] = useState(user?.gender === 'female' ? 'F' : 'M');
   
   useEffect(() => {
-    if (user) { // 사용자가 로그인한 경우에만 실행
+    if (user) {
       fetchComparisonData();
     }
   }, [selectedDate, selectedAge, selectedGender, user]);
@@ -41,63 +40,23 @@ const PeerComparison = () => {
       const year = selectedDate.getFullYear();
       const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
       
-      // 변경: 사용자 데이터는 user-spending/analysis에서 가져옴
-      const userAnalysisResponse = await axios.get(`/api/user-spending/analysis`, {
+      // 새로운 API 엔드포인트 사용 (/api/user-spending/compare-stats)
+      const response = await axios.get(`/api/user-spending/compare-stats`, {
         params: {
           userId: user._id,
           year,
-          month
-        }
-      });
-      
-      if (!userAnalysisResponse.data.success) {
-        setError('사용자 소비 분석 데이터를 불러오는데 실패했습니다.');
-        setLoading(false);
-        return;
-      }
-      
-      // 기존 비교군 데이터 API 호출
-      const peerResponse = await axios.get(`/api/spending/comparison`, {
-        params: {
-          year,
           month,
-          age: selectedAge,
-          gender: selectedGender === 'M' ? 'male' : 'female'
+          age: selectedAge
         }
       });
       
-      if (!peerResponse.data.success) {
+      if (!response.data.success) {
         setError('동년배 비교 데이터를 불러오는데 실패했습니다.');
         setLoading(false);
         return;
       }
       
-      // 두 데이터 소스를 합쳐서 결과 생성
-      const userData = userAnalysisResponse.data.data;
-      const peerData = peerResponse.data.data;
-      
-      // 결과 데이터 구성
-      const combinedData = {
-        userSpending: userData.userSpending,
-        peerAverage: peerData.peerAverage,
-        difference: userData.userSpending - peerData.peerAverage,
-        categoryComparison: userData.categoryComparison.map(userCat => {
-          // 동일한 카테고리 찾기
-          const peerCat = peerData.categoryComparison.find(
-            peer => peer.category === userCat.category
-          ) || { peerAmount: 0 };
-          
-          return {
-            category: userCat.category,
-            userAmount: userCat.userAmount,
-            peerAmount: peerCat.peerAmount,
-            difference: userCat.userAmount - peerCat.peerAmount
-          };
-        }),
-        userInfo: userData.userInfo
-      };
-      
-      setComparisonData(combinedData);
+      setComparisonData(response.data.data);
       setLoading(false);
     } catch (error) {
       console.error('동년배 비교 데이터 로딩 오류:', error);
@@ -396,21 +355,21 @@ const PeerComparison = () => {
                     <Col md={4} className="mb-3 mb-md-0">
                       <div className="stat-item">
                         <h6 className="text-muted">내 총 소비</h6>
-                        <h2>{formatCurrency(comparisonData.userSpending)}원</h2>
+                        <h2>{formatCurrency(comparisonData.summary.userTotal)}원</h2>
                       </div>
                     </Col>
                     <Col md={4} className="mb-3 mb-md-0">
                       <div className="stat-item">
                         <h6 className="text-muted">동년배 평균</h6>
-                        <h2>{formatCurrency(comparisonData.peerAverage)}원</h2>
+                        <h2>{formatCurrency(comparisonData.summary.peerAverage)}원</h2>
                       </div>
                     </Col>
                     <Col md={4}>
                       <div className="stat-item">
                         <h6 className="text-muted">차이</h6>
-                        <h2 className={comparisonData.userSpending > comparisonData.peerAverage ? 'text-danger' : 'text-success'}>
-                          {comparisonData.userSpending > comparisonData.peerAverage ? '+' : ''}
-                          {formatCurrency(comparisonData.userSpending - comparisonData.peerAverage)}원
+                        <h2 className={comparisonData.summary.difference > 0 ? 'text-danger' : 'text-success'}>
+                          {comparisonData.summary.difference > 0 ? '+' : ''}
+                          {formatCurrency(comparisonData.summary.difference)}원
                         </h2>
                       </div>
                     </Col>
@@ -436,29 +395,12 @@ const PeerComparison = () => {
                 </Card.Header>
                 <Card.Body>
                   <Row>
-                    {comparisonData.categoryComparison.filter(item => 
-                      (item.userAmount || 0) > (item.peerAmount || 0) * 1.2 && item.peerAmount > 0
-                    ).map((item, index) => (
-                      <Col md={6} key={index} className="mb-3">
-                        <Alert variant="warning" className="mb-0">
-                          <h6>{item.category} 카테고리 절감 제안</h6>
-                          <p className="mb-0">
-                            이 카테고리에서 동년배 평균보다 약 {Math.round(((item.userAmount / item.peerAmount) - 1) * 100)}% 더 많이 지출하고 있습니다.
-                            월 {formatCurrency(item.userAmount - item.peerAmount)}원 정도를 줄이면 평균 수준이 됩니다.
-                          </p>
-                        </Alert>
-                      </Col>
-                    ))}
-                    
-                    {comparisonData.categoryComparison.filter(item => 
-                      (item.userAmount || 0) < (item.peerAmount || 0) * 0.5 && item.peerAmount > 0
-                    ).map((item, index) => (
+                    {comparisonData.analysis.underspendingCategories.map((item, index) => (
                       <Col md={6} key={`low-${index}`} className="mb-3">
                         <Alert variant="info" className="mb-0">
                           <h6>{item.category} 카테고리 참고 사항</h6>
                           <p className="mb-0">
-                            이 카테고리에서 동년배 평균보다 상당히 적게 지출하고 있습니다.
-                            꼭 필요한 지출을 아끼고 있지는 않은지 확인해보세요.
+                            {item.suggestion}
                           </p>
                         </Alert>
                       </Col>
