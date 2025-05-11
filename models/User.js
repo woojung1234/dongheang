@@ -3,12 +3,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const UserSchema = new mongoose.Schema({
-  kakaoId: {
-    type: String,
-    required: false,
-    unique: true,
-    sparse: true
-  },
+  
   email: {
     type: String,
     required: false,
