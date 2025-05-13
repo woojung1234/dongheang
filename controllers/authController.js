@@ -104,14 +104,16 @@ const register = async (req, res) => {
     }
     
     try {
-      // 사용자 객체 생성
-      console.log('사용자 객체 생성 중...');
-      const userData = {
-        email,
-        password,
-        name: name || email.split('@')[0],
-        profileImage: 'https://via.placeholder.com/150'
-      };
+      // 사용자 객체 생성 - kakaoId 필드 제거
+console.log('사용자 객체 생성 중...');
+const userData = {
+      email,
+      password,
+      name: name || email.split('@')[0],
+      profileImage: 'https://via.placeholder.com/150'
+};
+
+// 기존 kakaoId 관련 코드 제거함
       
       // 새 사용자 생성
       const user = new User(userData);
@@ -241,7 +243,7 @@ const devLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: '이메일이 필요합니다.' });
     }
     
-    // 기존 사용자 조회 또는 새 사용자 생성
+    // 이메일 사용자 조회 또는 생성 - kakaoId 필드 제거
     let user = await User.findOne({ email });
     
     if (!user) {

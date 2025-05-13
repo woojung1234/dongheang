@@ -7,7 +7,7 @@
   right: 0;
   background-color: white;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
-  padding: 12px 0 10px;
+  padding: 8px 0 6px;
   z-index: 1000;
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
@@ -19,7 +19,7 @@
   align-items: center;
   width: 100%;
   cursor: pointer;
-  padding: 8px 0;
+  padding: 5px 0;
   color: #888;
   transition: all 0.2s ease;
   position: relative;
@@ -44,7 +44,7 @@
 
 .nav-icon {
   font-size: 1.5rem;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   transition: transform 0.2s ease;
 }
 
@@ -96,12 +96,12 @@
 /* 고령자를 위한 접근성 향상 */
 @media (min-width: 1024px) {
   .bottom-navigation {
-    padding: 15px 0 12px;
+    padding: 10px 0 8px;
   }
   
   .nav-icon {
     font-size: 1.8rem;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
   
   .nav-label {
