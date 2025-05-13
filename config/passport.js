@@ -1,6 +1,6 @@
 require('dotenv').config();
 const passport = require('passport');
-const KakaoStrategy = require('passport-kakao').Strategy;
+// const KakaoStrategy = require('passport-kakao').Strategy; // 카카오 로그인 비활성화
 const fs = require('fs');
 const path = require('path');
 const User = require('../models/User');
@@ -34,14 +34,5 @@ passport.deserializeUser(async (id, done) => {
     done(error, null);
   }
 });
-
-// 카카오 전략 설정
-const kakaoStrategyConfig = {
-  clientID: process.env.KAKAO_CLIENT_ID,
-  clientSecret: process.env.KAKAO_CLIENT_SECRET,
-  callbackURL: process.env.KAKAO_CALLBACK_URL
-};
-
-
 
 module.exports = passport;

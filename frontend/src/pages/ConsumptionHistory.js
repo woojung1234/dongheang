@@ -388,18 +388,17 @@ const ConsumptionHistory = () => {
     <div className="page-container">
       
       <Container className="py-4">
-        <div className="page-header d-flex justify-content-between align-items-center mb-4">
+        <div className="page-header d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center">
-            <button className="back-button" onClick={() => navigate('/')}>
+            <button className="back-button me-2" onClick={() => navigate('/')}>
               <FaArrowLeft />
             </button>
-            <h1 className="mb-0">내 소비 내역</h1>
+            <h1>내 소비 내역</h1>
           </div>
           
-          <div>
+          <div className="consumption-header-buttons">
             <Button 
-              variant="outline-primary" 
-              className="me-2"
+              variant="outline-primary"
               onClick={() => setShowFilters(!showFilters)}
               aria-expanded={showFilters}
             >
@@ -407,31 +406,30 @@ const ConsumptionHistory = () => {
             </Button>
             
             <Button 
-              variant="outline-primary" 
-              className="me-2"
+              variant="outline-primary"
               onClick={exportToCSV}
               disabled={spendings.length === 0}
             >
               <FaDownload /> 내보내기
             </Button>
             
-            <Button 
-              variant="primary"
+            <button 
+              className="add-spending-button"
               onClick={() => setShowAddModal(true)}
             >
               <FaPlus /> 소비 추가
-            </Button>
+            </button>
           </div>
         </div>
         
         {error && (
-          <Alert variant="danger" onClose={() => setError(null)} dismissible>
+          <Alert variant="danger" onClose={() => setError(null)} dismissible className="mt-3">
             {error}
           </Alert>
         )}
         
         {success && (
-          <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
+          <Alert variant="success" onClose={() => setSuccess(null)} dismissible className="mt-3">
             {success}
           </Alert>
         )}
@@ -543,7 +541,7 @@ const ConsumptionHistory = () => {
         )}
         
         {/* 소비 내역 테이블 */}
-        <Card className="mb-4">
+        <Card className="mb-4 mt-4">
           <Card.Body>
             {loading ? (
               <div className="text-center py-5">
